@@ -1,0 +1,19 @@
+# Variáveis de Ambiente e Segredos
+.env
+
+# Dependências
+node_modules/
+
+# Banco de dados SQLite local
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Arquivos do Sistema (macOS)
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
