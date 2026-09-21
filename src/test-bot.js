@@ -42,13 +42,13 @@ const fakeUser = {
 const dailyRes = recordDaily(fakeUser.id, fakeUser.username, {
   hoursToday: 4.5,
   timeRange: '08:00 às 12:30',
-  projectName: 'Hermes Benchmark',
+  projectName: 'Hermes Benchmark, Governança & Ética em IA',
   tasksDone: 'Refatoração da pipeline de testes',
   tasksNext: 'Documentação no GitHub',
   blockers: 'Nenhum'
 });
 
-const dailyEmbed = buildDailyEmbed(fakeUser, { hoursToday: 4.5, timeRange: '08:00 às 12:30', projectName: 'Hermes Benchmark', tasksDone: 'Refatoração', tasksNext: 'Doc', blockers: 'Nenhum' }, dailyRes);
+const dailyEmbed = buildDailyEmbed(fakeUser, { hoursToday: 4.5, timeRange: '08:00 às 12:30', projectName: 'Hermes Benchmark, Governança & Ética em IA', tasksDone: 'Refatoração', tasksNext: 'Doc', blockers: 'Nenhum' }, dailyRes);
 console.log(`✅ Embed de Daily gerado (${dailyEmbed.data.title})`);
 
 const profileEmbed = buildProfileEmbed(fakeUser, { role: 'Bolsista de Pesquisa', level: 1, xp: 50, daily_streak: 1 }, [], 4.5);

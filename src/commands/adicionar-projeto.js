@@ -1,5 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { addProject } from '../database.js';
+import { addProject, USER_ROLES } from '../database.js';
+
+export const allowedRoles = [USER_ROLES.COORDENADOR, USER_ROLES.ADMIN];
 
 export const data = new SlashCommandBuilder()
   .setName('adicionar-projeto')

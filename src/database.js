@@ -8,6 +8,12 @@ const __dirname = path.dirname(__filename);
 const dbPath = path.join(__dirname, '..', 'ciia_bot.db');
 const db = new Database(dbPath);
 
+export const USER_ROLES = {
+  BOLSISTA: 'Bolsista NIA/UnDF',
+  COORDENADOR: 'Coordenador',
+  ADMIN: 'Admin'
+};
+
 // Habilitar chaves estrangeiras e WAL mode para máxima estabilidade
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
@@ -18,11 +24,12 @@ export function initDatabase() {
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       username TEXT NOT NULL,
-      role TEXT DEFAULT 'Bolsista',
+      role TEXT,
       xp INTEGER DEFAULT 0,
       level INTEGER DEFAULT 1,
       daily_streak INTEGER DEFAULT 0,
       last_daily_date TEXT,
+      registered_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -72,6 +79,7 @@ export function initDatabase() {
   // Migrações dinâmicas para tabelas existentes
   try { db.exec('ALTER TABLE dailies ADD COLUMN time_range TEXT;'); } catch {}
   try { db.exec('ALTER TABLE dailies ADD COLUMN project_name TEXT;'); } catch {}
+  try { db.exec('ALTER TABLE users ADD COLUMN registered_at DATETIME;'); } catch {}
 
   // Inserir projetos padrões se a tabela estiver vazia
   const count = db.prepare('SELECT COUNT(*) as count FROM projects').get().count;
@@ -100,6 +108,66 @@ export function getUser(userId, username = 'Membro') {
     user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   }
   return user;
+}
+
+export function getExistingUser(userId) {
+  return db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+}
+
+export function isUserRegistered(userId) {
+  const user = getExistingUser(userId);
+  return !!user?.registered_at;
+}
+
+export function registerUser(userId, username, role) {
+  if (!Object.values(USER_ROLES).includes(role)) {
+    return { success: false, error: 'Categoria inválida.' };
+  }
+
+  const existing = getExistingUser(userId);
+  if (existing?.registered_at) {
+    return { success: false, error: `Você já está cadastrado como ${existing.role}.` };
+  }
+
+  getUser(userId, username);
+  db.prepare(`
+    UPDATE users
+    SET username = ?, role = ?, registered_at = COALESCE(registered_at, CURRENT_TIMESTAMP)
+    WHERE id = ?
+  `).run(username, role, userId);
+
+  return { success: true, role };
+}
+
+export function updateUserRegistration(targetUserId, username, role) {
+  if (!Object.values(USER_ROLES).includes(role)) {
+    return { success: false, error: 'Categoria inválida.' };
+  }
+
+  getUser(targetUserId, username);
+  db.prepare(`
+    UPDATE users
+    SET username = ?, role = ?, registered_at = COALESCE(registered_at, CURRENT_TIMESTAMP)
+    WHERE id = ?
+  `).run(username, role, targetUserId);
+
+  return { success: true, role };
+}
+
+export function getRegisteredUsersByRole(role = null) {
+  if (role) {
+    return db.prepare(`
+      SELECT * FROM users
+      WHERE registered_at IS NOT NULL AND role = ?
+      ORDER BY username ASC
+    `).all(role);
+  }
+
+  return db.prepare(`
+    SELECT * FROM users
+    WHERE registered_at IS NOT NULL
+    ORDER BY username ASC
+  `).all();
 }
 
 // Obter número da semana (ex: 2026-W38)
@@ -173,6 +241,43 @@ export function getWeeklyHours(userId, weekCode = getWeekCode()) {
 export function hasSubmittedDailyToday(userId, date = getFormattedDate()) {
   const result = db.prepare('SELECT id FROM dailies WHERE user_id = ? AND date = ?').get(userId, date);
   return !!result;
+}
+
+export function getDailyByUserDate(userId, date = getFormattedDate()) {
+  return db.prepare('SELECT * FROM dailies WHERE user_id = ? AND date = ?').get(userId, date);
+}
+
+export function updateDailyForDate(userId, date, { hoursToday, timeRange, projectName, tasksDone, tasksNext, blockers }) {
+  const daily = getDailyByUserDate(userId, date);
+  if (!daily) return { success: false, error: 'Daily não encontrada.' };
+
+  db.prepare(`
+    UPDATE dailies
+    SET hours_today = ?, time_range = ?, project_name = ?, tasks_done = ?, tasks_next = ?, blockers = ?
+    WHERE id = ?
+  `).run(hoursToday, timeRange || null, projectName || null, tasksDone, tasksNext, blockers || null, daily.id);
+
+  return { success: true, daily: getDailyByUserDate(userId, date) };
+}
+
+export function getDailiesByDateRange(startDate, endDate, userId = null) {
+  if (userId) {
+    return db.prepare(`
+      SELECT d.*, u.username, u.role
+      FROM dailies d
+      JOIN users u ON u.id = d.user_id
+      WHERE d.date BETWEEN ? AND ? AND d.user_id = ?
+      ORDER BY d.date ASC, u.username ASC
+    `).all(startDate, endDate, userId);
+  }
+
+  return db.prepare(`
+    SELECT d.*, u.username, u.role
+    FROM dailies d
+    JOIN users u ON u.id = d.user_id
+    WHERE d.date BETWEEN ? AND ?
+    ORDER BY d.date ASC, u.username ASC
+  `).all(startDate, endDate);
 }
 
 // Obter todos os projetos cadastrados
