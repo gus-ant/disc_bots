@@ -20,8 +20,16 @@ export async function execute(interaction) {
         value: 'Exibe seu cartão de membro com seu progresso de horas na semana (`X / 20h`), sequência de dailies e conquistas (*badges*).'
       },
       {
-        name: '🚀 `/projetos`',
-        value: 'Mostra as principais frentes de pesquisa e soluções de IA desenvolvidas pelo CIIA/DF.'
+        name: '📁 `/registrar-conteudo`',
+        value: 'Registra um novo arquivo de documentação, post de rede social ou inspiracao para o acervo do CIIA.'
+      },
+      {
+        name: '📚 `/conteudos [usuario]`',
+        value: 'Lista todos os arquivos e conteúdos salvos no acervo do CIIA (permite filtrar por membro).'
+      },
+      {
+        name: '🚀 `/projetos` & `/adicionar-projeto`',
+        value: 'Mostra as principais frentes de pesquisa do CIIA/DF ou cadastra novas iniciativas.'
       },
       {
         name: '🏆 `/ranking`',

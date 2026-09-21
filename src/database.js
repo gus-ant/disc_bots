@@ -56,6 +56,17 @@ export function initDatabase() {
       UNIQUE(user_id, badge_id),
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS contents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      link TEXT NOT NULL,
+      inspiration TEXT,
+      category TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
   `);
 
   // Migrações dinâmicas para tabelas existentes
@@ -238,6 +249,49 @@ export function getLeaderboard(limit = 10) {
     SELECT id, username, xp, level, daily_streak FROM users
     ORDER BY xp DESC LIMIT ?
   `).all(limit);
+}
+
+// Registrar novo conteúdo/arquivo
+export function recordContent(userId, username, { title, link, inspiration, category }) {
+  // Garantir que o usuário existe
+  getUser(userId, username);
+
+  const result = db.prepare(`
+    INSERT INTO contents (user_id, title, link, inspiration, category)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(userId, title, link, inspiration || null, category);
+
+  // Dar XP ao usuário pelo registro
+  const xpResult = addXP(userId, 30);
+
+  return { id: result.lastInsertRowid, xpGained: 30, ...xpResult };
+}
+
+// Obter conteúdos (opcionalmente filtrado por user_id)
+export function getContents(userId = null, limit = 10) {
+  if (userId) {
+    return db.prepare(`
+      SELECT c.*, u.username FROM contents c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.user_id = ?
+      ORDER BY c.created_at DESC LIMIT ?
+    `).all(userId, limit);
+  }
+  return db.prepare(`
+    SELECT c.*, u.username FROM contents c
+    JOIN users u ON c.user_id = u.id
+    ORDER BY c.created_at DESC LIMIT ?
+  `).all(limit);
+}
+
+// Deletar conteúdo (somente admins farão isso via interface)
+export function deleteContent(contentId) {
+  try {
+    const result = db.prepare('DELETE FROM contents WHERE id = ?').run(contentId);
+    return result.changes > 0;
+  } catch (e) {
+    return false;
+  }
 }
 
 export default db;

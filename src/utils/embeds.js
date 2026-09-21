@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 // Cores temáticas do CIIA/DF
 export const CIIA_COLORS = {
@@ -48,7 +48,7 @@ export function buildDailyModal() {
     .setCustomId('time_range')
     .setLabel('Horário de trabalho (De qual a qual hora?)')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Ex: 08:00 às 12:00')
+    .setPlaceholder('Ex: 12h às 14h e 18h às 20h')
     .setRequired(true);
 
   const projectInput = new TextInputBuilder()
@@ -196,4 +196,79 @@ export function buildShareEmbed(userDiscord, title, link, description, category)
     .setAuthor({ name: userDiscord.displayName || userDiscord.username, iconURL: userDiscord.displayAvatarURL() })
     .setFooter({ text: 'Compartilhado com a Comunidade CIIA/DF' })
     .setTimestamp();
+}
+
+// Modal para registro de conteúdos/arquivos
+export function buildContentModal() {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_content')
+    .setTitle('📁 Registrar Arquivo / Conteúdo');
+
+  const titleInput = new TextInputBuilder()
+    .setCustomId('content_title')
+    .setLabel('Nome do Post / Arquivo')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Ex: Post Carrossel IA na Educação')
+    .setRequired(true);
+
+  const linkInput = new TextInputBuilder()
+    .setCustomId('content_link')
+    .setLabel('Link do Arquivo (Drive / Canva)')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('https://...')
+    .setRequired(true);
+
+  const categoryInput = new TextInputBuilder()
+    .setCustomId('content_category')
+    .setLabel('Categoria')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Ex: Redes Sociais, Documentação, Relatório')
+    .setRequired(true);
+
+  const inspirationInput = new TextInputBuilder()
+    .setCustomId('content_inspiration')
+    .setLabel('Inspiração / Referências (Opcional)')
+    .setStyle(TextInputStyle.Paragraph)
+    .setPlaceholder('Ex: Link para o post de referência ou ideias...')
+    .setRequired(false);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(titleInput),
+    new ActionRowBuilder().addComponents(linkInput),
+    new ActionRowBuilder().addComponents(categoryInput),
+    new ActionRowBuilder().addComponents(inspirationInput)
+  );
+
+  return modal;
+}
+
+// Embed de confirmação de conteúdo
+export function buildContentEmbed(userDiscord, { id, title, link, inspiration, category }) {
+  const embed = new EmbedBuilder()
+    .setColor(CIIA_COLORS.INFO)
+    .setTitle(`📁 Novo Arquivo Registrado: ${title}`)
+    .setThumbnail(userDiscord.displayAvatarURL({ dynamic: true }))
+    .addFields(
+      { name: '🏷️ Categoria', value: `\`${category}\``, inline: true },
+      { name: '🔗 Link de Acesso', value: link, inline: false }
+    )
+    .setAuthor({ name: userDiscord.displayName || userDiscord.username, iconURL: userDiscord.displayAvatarURL() })
+    .setFooter({ text: `CIIA/DF Archive • ID: ${id}` })
+    .setTimestamp();
+
+  if (inspiration && inspiration.trim() !== '') {
+    embed.addFields({ name: '💡 Inspiração / Referência', value: inspiration, inline: false });
+  }
+
+  return embed;
+}
+
+// Botões de administração para gerenciar conteúdo
+export function buildContentAdminRow(contentId) {
+  const deleteBtn = new ButtonBuilder()
+    .setCustomId(`btn_delete_content_${contentId}`)
+    .setLabel('🗑️ Excluir Arquivo')
+    .setStyle(ButtonStyle.Danger);
+
+  return new ActionRowBuilder().addComponents(deleteBtn);
 }

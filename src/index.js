@@ -3,8 +3,8 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initDatabase, recordDaily, addXP, hasSubmittedDailyToday } from './database.js';
-import { buildDailyEmbed, CIIA_COLORS } from './utils/embeds.js';
+import { initDatabase, recordDaily, addXP, hasSubmittedDailyToday, recordContent, deleteContent } from './database.js';
+import { buildDailyEmbed, CIIA_COLORS, buildContentEmbed, buildContentAdminRow } from './utils/embeds.js';
 
 dotenv.config();
 
@@ -136,6 +136,76 @@ client.on('interactionCreate', async interaction => {
         content: '❌ Houve um problema ao salvar seu registro de daily. Tente novamente mais tarde.'
       });
     }
+    return;
+  }
+
+  // 3. Tratar Submissão do Modal de Conteúdo (/registrar-conteudo)
+  if (interaction.isModalSubmit() && interaction.customId === 'modal_content') {
+    await interaction.deferReply({ ephemeral: true });
+    
+    try {
+      const title = interaction.fields.getTextInputValue('content_title');
+      const link = interaction.fields.getTextInputValue('content_link');
+      const category = interaction.fields.getTextInputValue('content_category');
+      
+      let inspiration = null;
+      try {
+        inspiration = interaction.fields.getTextInputValue('content_inspiration');
+      } catch (e) {}
+
+      const result = recordContent(interaction.user.id, interaction.user.username, {
+        title, link, inspiration, category
+      });
+
+      const embed = buildContentEmbed(interaction.user, {
+        id: result.id, title, link, inspiration, category
+      });
+
+      const adminRow = buildContentAdminRow(result.id);
+
+      const archiveChannelId = process.env.ARCHIVE_CHANNEL_ID;
+      let targetChannel = interaction.channel;
+
+      if (archiveChannelId) {
+        const channel = await interaction.client.channels.fetch(archiveChannelId).catch(() => null);
+        if (channel) targetChannel = channel;
+      }
+
+      await targetChannel.send({ embeds: [embed], components: [adminRow] });
+
+      await interaction.editReply({
+        content: `✅ **Conteúdo registrado com sucesso!** (+${result.xpGained} XP)\nEle foi enviado para o canal de arquivos.`
+      });
+
+    } catch (error) {
+      console.error('❌ Erro ao processar Modal de Conteúdo:', error);
+      await interaction.editReply({ content: '❌ Houve um problema ao salvar seu registro.' });
+    }
+    return;
+  }
+
+  // 4. Tratar Botões (Excluir Conteúdo)
+  if (interaction.isButton() && interaction.customId.startsWith('btn_delete_content_')) {
+    const hasPermission = interaction.memberPermissions.has('ManageMessages') || interaction.memberPermissions.has('Administrator');
+    
+    if (!hasPermission) {
+      return interaction.reply({ content: '❌ Apenas administradores podem excluir registros.', ephemeral: true });
+    }
+
+    const contentId = interaction.customId.split('_')[3];
+    const deleted = deleteContent(contentId);
+    
+    if (deleted) {
+      const embed = EmbedBuilder.from(interaction.message.embeds[0]);
+      embed.setColor(CIIA_COLORS.WARNING);
+      embed.setTitle(embed.data.title + ' [EXCLUÍDO]');
+      embed.setDescription('Este registro foi removido por um administrador.');
+
+      await interaction.update({ embeds: [embed], components: [] });
+    } else {
+      await interaction.reply({ content: '❌ Erro ao excluir ou o registro não existe mais.', ephemeral: true });
+    }
+    return;
   }
 });
 
