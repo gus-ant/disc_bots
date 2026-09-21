@@ -1,43 +1,52 @@
-# 🤖 Bot de Engajamento & Acompanhamento de Bolsistas — CIIA/DF
+<p align="center">
+  <img src="images/shark_ciia.jpg" alt="Shark CIIA Logo" width="250" />
+</p>
 
-Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CIIA/DF)**, combinando acompanhamento de produtividade de bolsistas (standup diário, meta de 20h/semana em dias úteis) e engajamento da comunidade de IA.
+# Bot de Engajamento & Acompanhamento de Bolsistas — CIIA/DF
+
+Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CIIA/DF)**, combinando acompanhamento de produtividade de bolsistas (standup diário, meta de 20h/semana em dias úteis), gerenciamento de acervo de arquivos/conteúdos e engajamento da comunidade de IA.
 
 ---
 
-## 🚀 Funcionalidades Principais
+## Funcionalidades Principais
 
-### 📋 Fora e Dentro do Expediente de Bolsistas
-- **`/daily` (Standup Diário em Modal)**: Formulário interativo para registrar horas trabalhadas no dia, atividades realizadas, metas para o próximo dia útil e bloqueios/impedimentos.
+### Expediente e Produtividade dos Bolsistas
+- **`/daily` (Standup Diário em Modal)**: Formulário interativo para registrar horas trabalhadas no dia (com suporte a horários partidos), atividades realizadas, metas para o próximo dia útil e bloqueios/impedimentos.
 - **Frequência em Dias Úteis**: O contador de dias seguidos (*streak*) opera de **segunda a sexta-feira**. Finais de semana não quebram a sequência do bolsista.
 - **Meta de 20 Horas Semanais**: Barra de progresso visual em tempo real no perfil e na daily (`X / 20.0h`).
 
-### 👤 Perfil & Gamificação
-- **`/perfil`**: Exibe a foto, nível de contribuição (XP), horas acumuladas na semana, sequência de dailies e badges desbloqueadas.
+### Gerenciamento de Arquivos e Conteúdos
+- **`/registrar-conteudo`**: Formulário para bolsistas registrarem novos arquivos de documentação, posts para redes sociais ou referências.
+- **`/conteudos`**: Visualização e listagem do acervo de conteúdos registrados, com suporte a filtro opcional por membro (`/conteudos @usuario`).
+- **Moderação Integrada**: Botões interativos para administradores removerem registros diretamente do Discord.
+
+### Perfil & Gamificação
+- **`/perfil`**: Exibe a foto, nível de contribuição (XP), horas acumuladas na semana, sequência de dailies e conquistas (*badges*).
 - **`/ranking`**: Leaderboard com os membros mais ativos do servidor.
 - **Badges Iniciais**:
-  - 🚀 **Primeiros Passos**: Registrou a 1ª daily.
-  - 🔥 **Imparável**: 5 dias úteis seguidos de daily (uma semana completa).
-  - ⏱️ **Meta 20h Concluída**: Cumpriu as 20 horas na semana.
-  - 🧠 **Contribuidor IA**: Compartilhou conteúdo relevante com a comunidade.
+  - **Primeiros Passos**: Registrou a 1ª daily.
+  - **Imparável**: 5 dias úteis seguidos de daily (uma semana completa).
+  - **Meta 20h Concluída**: Cumpriu as 20 horas na semana.
+  - **Contribuidor IA**: Compartilhou conteúdo relevante com a comunidade.
 
-### 💬 Comunidade & IA
-- **`/projetos`**: Apresenta as frentes de atuação e projetos ativos do CIIA/DF.
+### Comunidade & IA
+- **`/projetos` & `/adicionar-projeto`**: Apresenta as frentes de atuação e permite cadastrar novos projetos ativos do CIIA/DF.
 - **`/compartilhar`**: Compartilha artigos, benchmarks, notícias e ferramentas de IA com a comunidade.
 - **`/ajuda`**: Guia interativo para novos membros e bolsistas.
 
 ---
 
-## 🛠️ Passo a Passo para Colocar o Bot Online
+## Passo a Passo para Colocar o Bot Online
 
 ### 1. Criar o Bot no Discord Developer Portal
 1. Acesse o [Discord Developer Portal](https://discord.com/developers/applications).
-2. Clique em **New Application**, dê o nome de `CIIA Bot` e clique em **Create**.
+2. Clique em **New Application**, dê o nome de `Shark_CIIA` e clique em **Create**.
 3. No menu lateral esquerdo, vá em **Bot**:
    - Clique em **Reset Token** e **Copie o Token** gerado (guarde com segurança!).
    - Em **Privileged Gateway Intents**, ative as opções:
-     - ✅ **PRESENCE INTENT**
-     - ✅ **SERVER MEMBERS INTENT**
-     - ✅ **MESSAGE CONTENT INTENT**
+     - **PRESENCE INTENT**
+     - **SERVER MEMBERS INTENT**
+     - **MESSAGE CONTENT INTENT**
 4. No menu lateral esquerdo, vá em **OAuth2 -> URL Generator**:
    - Marque a checkbox **`bot`** e **`applications.commands`**.
    - Em *Bot Permissions*, marque **Administrator** (ou *Send Messages*, *Embed Links*, *Use Slash Commands*).
@@ -46,7 +55,7 @@ Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CI
 ---
 
 ### 2. Configurar o Arquivo `.env`
-No diretório do projeto (`/Users/gustavo/Documents/disc_bots`), crie ou edite o arquivo `.env` copiando o modelo `.env.example`:
+No diretório do projeto, crie ou edite o arquivo `.env` copiando o modelo `.env.example`:
 
 ```env
 # Token do Bot (obtido no menu Bot)
@@ -60,12 +69,15 @@ GUILD_ID=seu_guild_id_aqui
 
 # (Opcional) ID do canal do Discord onde as dailies públicas serão postadas (ex: #standup-bolsistas)
 DAILY_CHANNEL_ID=seu_canal_id_aqui
+
+# (Opcional) ID do canal do Discord onde os registros de acervo/arquivos serão postados
+ARCHIVE_CHANNEL_ID=seu_canal_arquivo_id_aqui
 ```
 
 ---
 
 ### 3. Registrar os Comandos Slash no Discord
-Execute o comando de deploy para registrar os comandos `/daily`, `/perfil`, etc. no Discord:
+Execute o comando de deploy para registrar os comandos no Discord:
 
 ```bash
 npm run deploy
@@ -81,11 +93,11 @@ npm start
 ```
 
 Você verá a mensagem:
-`🤖 Bot CIIA/DF online como CIIA Bot#1234!`
+`Bot CIIA/DF online como Shark_CIIA#1234!`
 
 ---
 
-## 🧪 Comandos Úteis de Desenvolvimento
+## Comandos Úteis de Desenvolvimento
 
 ```bash
 # Executar a suíte de testes de validação completa (banco + comandos + embeds)
@@ -97,9 +109,9 @@ npm run test-db
 
 ---
 
-## 📁 Estrutura do Código
+## Estrutura do Código
 
-- `src/index.js`: Ponto de entrada do bot, manipulador de eventos e modais.
-- `src/database.js`: Banco SQLite com suporte a dias úteis, cálculo de streak, horas semanais e XP.
+- `src/index.js`: Ponto de entrada do bot, manipulador de eventos, modais e botões.
+- `src/database.js`: Banco SQLite com suporte a dias úteis, cálculo de streak, horas semanais, XP e acervo de arquivos.
 - `src/utils/embeds.js`: Construtores de Modals e Embeds estilizados com o tema do CIIA/DF.
-- `src/commands/`: Módulos de comandos Slash (`/daily`, `/perfil`, `/projetos`, `/ranking`, `/compartilhar`, `/ajuda`).
+- `src/commands/`: Módulos de comandos Slash (`/daily`, `/perfil`, `/projetos`, `/adicionar-projeto`, `/ranking`, `/registrar-conteudo`, `/conteudos`, `/compartilhar`, `/ajuda`).
