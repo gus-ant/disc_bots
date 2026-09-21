@@ -2,7 +2,7 @@
   <img src="images/shark_ciia.jpg" alt="Shark CIIA Logo" width="250" />
 </p>
 
-# Bot de Engajamento & Acompanhamento de Bolsistas — CIIA/DF
+# Bot de Engajamento & Acompanhamento de Bolsistas do Discord (CIIA/DF)
 
 Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CIIA/DF)**, combinando acompanhamento de produtividade de bolsistas (standup diário, meta de 20h/semana em dias úteis), gerenciamento de acervo de arquivos/conteúdos e engajamento da comunidade de IA.
 
