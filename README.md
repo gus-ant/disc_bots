@@ -46,6 +46,35 @@ Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CI
 
 ---
 
+## 📊 Dashboard Web de Métricas (Interface Visual)
+
+O projeto conta com um **Dashboard Web completo em Dark Mode High-End** para visualização e análise em tempo real das métricas de produtividade do **CIIA/DF**.
+
+### Como Acessar:
+Ao iniciar o projeto com `npm start` ou `npm run dashboard`, acesse no seu navegador:
+👉 **[http://localhost:3000](http://localhost:3000)**
+
+### Abas & Funcionalidades do Dashboard:
+- 📈 **Visão Geral**: 5 Cards KPI em tempo real (Total Horas, Dailies Enviadas, Bolsistas Ativos, % de Cumprimento da Meta de 20h e Acervo), Gráfico de Evolução Diária (Chart.js), Gráfico de Distribuição por Projeto e Feed de Atividades Recentes.
+- 🎓 **Bolsistas & Alunos**: Grid/Tabela de alunos com busca por nome, progresso dinâmico da meta de 20h na semana, streak flame, badges e **modal de perfil detalhado** com linha do tempo de standups.
+- 📋 **Dailies & Entregas**: Tabela interativa com busca em tempo real e filtro por projeto, exibindo horas, tarefas concluídas, metas e bloqueios.
+- 🚀 **Projetos**: Cards visuais com estatísticas por iniciativa (horas acumuladas, total de relatórios, bolsistas participantes e maior contribuidor).
+- 📚 **Acervo de Conteúdos**: Galeria filtrável por categorias (*Artigo, Benchmark, Ferramenta, Documentação*) com atalhos diretos.
+- 🏆 **Rankings & Conquistas**: Pódio tridimensional dos Top 3 bolsistas e tabelas de classificação por XP, Streak e Carga Horária.
+
+### APIs REST Disponíveis:
+- `GET /api/metrics/summary`: Resumo dos KPIs globais.
+- `GET /api/metrics/trends`: Histórico temporal de horas e dailies.
+- `GET /api/metrics/projects`: Distribuição de horas por projeto.
+- `GET /api/students`: Métricas consolidadas dos bolsistas.
+- `GET /api/students/:id`: Perfil e histórico individual do bolsista.
+- `GET /api/dailies`: Relatórios diários com filtros e busca.
+- `GET /api/projects`: Estatísticas de cada projeto.
+- `GET /api/contents`: Materiais e links salvos no acervo.
+- `GET /api/rankings`: Tabelas de gamificação e classificação.
+
+---
+
 ## Passo a Passo para Colocar o Bot Online
 
 ### 1. Criar o Bot no Discord Developer Portal
@@ -116,6 +145,12 @@ Você verá a mensagem:
 ## Comandos Úteis de Desenvolvimento
 
 ```bash
+# Iniciar o Bot do Discord e o Dashboard Web simultaneamente:
+npm start
+
+# Executar apenas o Dashboard Web na porta 3000:
+npm run dashboard
+
 # Executar a suíte de testes de validação completa (banco + comandos + embeds)
 npm run test-bot
 
@@ -127,7 +162,11 @@ npm run test-db
 
 ## Estrutura do Código
 
-- `src/index.js`: Ponto de entrada do bot, manipulador de eventos, modais e botões.
-- `src/database.js`: Banco SQLite com suporte a dias úteis, cálculo de streak, horas semanais, XP e acervo de arquivos.
+- `src/index.js`: Ponto de entrada principal (Bot Discord + Servidor do Dashboard Web).
+- `src/server.js`: Servidor HTTP Express com rotas de API REST de métricas e hospedagem do Dashboard Web.
+- `src/database.js`: Banco SQLite com suporte a dias úteis, cálculo de streak, horas semanais, XP, acervo de conteúdos e agregações para o Dashboard.
 - `src/utils/embeds.js`: Construtores de Modals e Embeds estilizados com o tema do CIIA/DF.
+- `src/utils/dates.js`: Utilitários para tratamento de datas, dias úteis e fusos horários.
 - `src/commands/`: Módulos de comandos Slash (`/cadastrar`, `/alterar-cadastro`, `/daily`, `/editar-daily`, `/minha-semana`, `/exportar-dailies`, `/perfil`, `/projetos`, `/adicionar-projeto`, `/ranking`, `/registrar-conteudo`, `/conteudos`, `/compartilhar`, `/ajuda`).
+- `public/`: Frontend estático do Dashboard Web (`index.html`, `css/dashboard.css`, `js/dashboard.js`).
+
