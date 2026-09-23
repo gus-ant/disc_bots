@@ -31,6 +31,31 @@ export function createProgressBar(current, target = 20, size = 10) {
   return `\`[${progressText}${emptyProgressText}]\` **${current.toFixed(1)}h / ${target}h** (${percentageText}%)`;
 }
 
+export function normalizeProjectNames(projectName = '') {
+  const seen = new Set();
+
+  return String(projectName)
+    .split(/[,\n;]+/)
+    .map(project => project.trim())
+    .filter(Boolean)
+    .filter(project => {
+      const key = project.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, 5);
+}
+
+function formatProjectField(projectName) {
+  const projects = normalizeProjectNames(projectName);
+
+  if (projects.length === 0) return '`Geral`';
+  if (projects.length === 1) return `\`${projects[0]}\``;
+
+  return projects.map(project => `- ${project}`).join('\n');
+}
+
 // Modal para o comando /daily
 export function buildDailyModal() {
   const modal = new ModalBuilder()
@@ -53,9 +78,9 @@ export function buildDailyModal() {
 
   const projectInput = new TextInputBuilder()
     .setCustomId('project_name')
-    .setLabel('Projeto do CIIA vinculado')
+    .setLabel('Projeto(s) do CIIA vinculado(s)')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Ex: Hermes Benchmark / Diagnóstico / Governança')
+    .setPlaceholder('Ex: Hermes Benchmark, Diagnóstico, Governança')
     .setRequired(true);
 
   const doneInput = new TextInputBuilder()
@@ -83,9 +108,62 @@ export function buildDailyModal() {
   return modal;
 }
 
+export function buildEditDailyModal(daily) {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_edit_daily')
+    .setTitle('Editar Daily de Hoje');
+
+  const hoursInput = new TextInputBuilder()
+    .setCustomId('hours_today')
+    .setLabel('Carga Horária (em horas)')
+    .setStyle(TextInputStyle.Short)
+    .setValue(String(daily.hours_today))
+    .setRequired(true);
+
+  const timeRangeInput = new TextInputBuilder()
+    .setCustomId('time_range')
+    .setLabel('Horário de trabalho')
+    .setStyle(TextInputStyle.Short)
+    .setValue(daily.time_range || '')
+    .setRequired(true);
+
+  const projectInput = new TextInputBuilder()
+    .setCustomId('project_name')
+    .setLabel('Projeto(s) do CIIA vinculado(s)')
+    .setStyle(TextInputStyle.Short)
+    .setValue(daily.project_name || '')
+    .setRequired(true);
+
+  const doneInput = new TextInputBuilder()
+    .setCustomId('tasks_done')
+    .setLabel('O que você realizou / demandas de hoje?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setValue(daily.tasks_done || '')
+    .setRequired(true);
+
+  const nextInput = new TextInputBuilder()
+    .setCustomId('tasks_next')
+    .setLabel('Próximas metas & Bloqueios (se houver)')
+    .setStyle(TextInputStyle.Paragraph)
+    .setValue(daily.tasks_next || '')
+    .setRequired(true);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(hoursInput),
+    new ActionRowBuilder().addComponents(timeRangeInput),
+    new ActionRowBuilder().addComponents(projectInput),
+    new ActionRowBuilder().addComponents(doneInput),
+    new ActionRowBuilder().addComponents(nextInput)
+  );
+
+  return modal;
+}
+
 // Embed de confirmação pública de Daily no canal #standup-bolsistas
 export function buildDailyEmbed(userDiscord, { hoursToday, timeRange, projectName, tasksDone, tasksNext, blockers }, result) {
   const hasBlocker = blockers && blockers.trim().toLowerCase() !== 'nenhum' && blockers.trim() !== '';
+  const projectFieldValue = formatProjectField(projectName);
+  const hasMultipleProjects = normalizeProjectNames(projectName).length > 1;
 
   const embed = new EmbedBuilder()
     .setColor(hasBlocker ? CIIA_COLORS.WARNING : CIIA_COLORS.PRIMARY)
@@ -93,7 +171,7 @@ export function buildDailyEmbed(userDiscord, { hoursToday, timeRange, projectNam
     .setThumbnail(userDiscord.displayAvatarURL({ dynamic: true }))
     .addFields(
       { name: '⏱️ Horas Registradas', value: `\`+${hoursToday}h\` (${timeRange || 'Não informado'})`, inline: true },
-      { name: '🚀 Projeto Vinculado', value: `\`${projectName || 'Geral'}\``, inline: true },
+      { name: hasMultipleProjects ? '🚀 Projetos Vinculados' : '🚀 Projeto Vinculado', value: projectFieldValue, inline: !hasMultipleProjects },
       { name: '🔥 Daily Streak (Dias Úteis)', value: `\`${result.streak} dia(s)\``, inline: true },
       { name: '📊 Horas Acumuladas na Semana', value: createProgressBar(result.weeklyHours, 20), inline: false },
       { name: '✅ Realizado Hoje', value: tasksDone, inline: false },

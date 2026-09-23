@@ -2,7 +2,7 @@
   <img src="images/shark_ciia.jpg" alt="Shark CIIA Logo" width="250" />
 </p>
 
-# Bot de Engajamento & Acompanhamento de Bolsistas — CIIA/DF
+# Bot de Engajamento & Acompanhamento de Bolsistas do Discord (CIIA/DF)
 
 Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CIIA/DF)**, combinando acompanhamento de produtividade de bolsistas (standup diário, meta de 20h/semana em dias úteis), gerenciamento de acervo de arquivos/conteúdos e engajamento da comunidade de IA.
 
@@ -10,10 +10,19 @@ Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CI
 
 ## Funcionalidades Principais
 
+### Cadastro Obrigatório
+- **`/cadastrar`**: Primeiro passo obrigatório para usar qualquer outro comando do bot. O usuário escolhe entre **Bolsista NIA/UnDF**, **Coordenador** ou **Admin**.
+- **Admin restrito**: A categoria **Admin** só é aceita para IDs configurados em `ADMIN_USER_IDS`.
+- **Permissões internas**: Bolsistas usam os fluxos de daily/conteúdo; coordenadores também exportam relatórios e adicionam projetos; admins podem alterar cadastros e moderar registros.
+
 ### Expediente e Produtividade dos Bolsistas
-- **`/daily` (Standup Diário em Modal)**: Formulário interativo para registrar horas trabalhadas no dia (com suporte a horários partidos), atividades realizadas, metas para o próximo dia útil e bloqueios/impedimentos.
+- **`/daily` (Standup Diário em Modal)**: Formulário interativo para registrar horas trabalhadas no dia (com suporte a horários partidos), um ou mais projetos vinculados, atividades realizadas, metas para o próximo dia útil e bloqueios/impedimentos.
+- **`/editar-daily`**: Permite corrigir a própria daily do dia atual.
+- **`/minha-semana`**: Mostra o resumo individual da semana, incluindo horas, progresso até 20h, projetos citados e registros enviados.
 - **Frequência em Dias Úteis**: O contador de dias seguidos (*streak*) opera de **segunda a sexta-feira**. Finais de semana não quebram a sequência do bolsista.
 - **Meta de 20 Horas Semanais**: Barra de progresso visual em tempo real no perfil e na daily (`X / 20.0h`).
+- **Lembrete Inteligente**: Bolsistas cadastrados que ainda não fizeram daily recebem DM às 17h em dias úteis.
+- **Resumo Semanal Automático**: Toda sexta-feira às 15h, o bot publica um resumo breve no canal configurado em `WEEKLY_SUMMARY_CHANNEL_ID`.
 
 ### Gerenciamento de Arquivos e Conteúdos
 - **`/registrar-conteudo`**: Formulário para bolsistas registrarem novos arquivos de documentação, posts para redes sociais ou referências.
@@ -31,6 +40,7 @@ Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CI
 
 ### Comunidade & IA
 - **`/projetos` & `/adicionar-projeto`**: Apresenta as frentes de atuação e permite cadastrar novos projetos ativos do CIIA/DF.
+- **`/exportar-dailies`**: Coordenadores e admins exportam CSV do mês atual por padrão, com suporte a intervalo de datas.
 - **`/compartilhar`**: Compartilha artigos, benchmarks, notícias e ferramentas de IA com a comunidade.
 - **`/ajuda`**: Guia interativo para novos membros e bolsistas.
 
@@ -70,8 +80,14 @@ GUILD_ID=seu_guild_id_aqui
 # (Opcional) ID do canal do Discord onde as dailies públicas serão postadas (ex: #standup-bolsistas)
 DAILY_CHANNEL_ID=seu_canal_id_aqui
 
+# (Opcional) ID do canal onde o resumo semanal será postado às sextas, 15h
+WEEKLY_SUMMARY_CHANNEL_ID=seu_canal_resumo_id_aqui
+
 # (Opcional) ID do canal do Discord onde os registros de acervo/arquivos serão postados
 ARCHIVE_CHANNEL_ID=seu_canal_arquivo_id_aqui
+
+# IDs dos usuários que podem se cadastrar como Admin
+ADMIN_USER_IDS=seu_id_discord,gustavo_id_discord
 ```
 
 ---
@@ -114,4 +130,4 @@ npm run test-db
 - `src/index.js`: Ponto de entrada do bot, manipulador de eventos, modais e botões.
 - `src/database.js`: Banco SQLite com suporte a dias úteis, cálculo de streak, horas semanais, XP e acervo de arquivos.
 - `src/utils/embeds.js`: Construtores de Modals e Embeds estilizados com o tema do CIIA/DF.
-- `src/commands/`: Módulos de comandos Slash (`/daily`, `/perfil`, `/projetos`, `/adicionar-projeto`, `/ranking`, `/registrar-conteudo`, `/conteudos`, `/compartilhar`, `/ajuda`).
+- `src/commands/`: Módulos de comandos Slash (`/cadastrar`, `/alterar-cadastro`, `/daily`, `/editar-daily`, `/minha-semana`, `/exportar-dailies`, `/perfil`, `/projetos`, `/adicionar-projeto`, `/ranking`, `/registrar-conteudo`, `/conteudos`, `/compartilhar`, `/ajuda`).
