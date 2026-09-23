@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard CIIA/DF — Métricas & Produtividade</title>
+  
+  <!-- Fontes Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icones FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Estilos Customizados -->
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+  <!-- Layout Principal -->
+  <div class="app-container">
+    
+    <!-- Top Header -->
+    <header class="navbar">
+      <div class="navbar-brand">
+        <div class="logo-icon">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="brand-text">
+          <h1>CIIA/DF <span>Dashboard</span></h1>
+          <p>Centro Integrado de Inteligência Artificial do DF</p>
+        </div>
+      </div>
+
+      <div class="navbar-actions">
+        <div class="status-pill">
+          <span class="pulse-dot"></span>
+          <span id="status-text">Sistema Operacional</span>
+        </div>
+        <button id="btn-refresh" class="btn btn-secondary">
+          <i class="fa-solid fa-rotate-right"></i> Atualizar
+        </button>
+      </div>
+    </header>
+
+    <!-- Menu de Navegação por Abas -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-overview">
+        <i class="fa-solid fa-chart-pie"></i> Visão Geral
+      </button>
+      <button class="tab-btn" data-tab="tab-students">
+        <i class="fa-solid fa-user-graduate"></i> Bolsistas & Alunos
+      </button>
+      <button class="tab-btn" data-tab="tab-dailies">
+        <i class="fa-solid fa-calendar-check"></i> Dailies & Entregas
+      </button>
+      <button class="tab-btn" data-tab="tab-projects">
+        <i class="fa-solid fa-folder-tree"></i> Projetos
+      </button>
+      <button class="tab-btn" data-tab="tab-contents">
+        <i class="fa-solid fa-book-bookmark"></i> Acervo de Conteúdos
+      </button>
+      <button class="tab-btn" data-tab="tab-rankings">
+        <i class="fa-solid fa-trophy"></i> Rankings & Conquistas
+      </button>
+    </nav>
+
+    <!-- Conteúdo das Abas -->
+    <main class="main-content">
+      
+      <!-- ABA 1: VISÃO GERAL -->
+      <section id="tab-overview" class="tab-content active">
+        <!-- Grid de Cartões KPI -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon icon-cyan">
+              <i class="fa-solid fa-clock"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-title">Total de Horas Logadas</span>
+              <h3 id="kpi-total-hours">0.0 h</h3>
+              <span class="kpi-sub" id="kpi-avg-weekly">Média: 0.0h / semana</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon icon-blue">
+              <i class="fa-solid fa-list-check"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-title">Dailies Registradas</span>
+              <h3 id="kpi-total-dailies">0</h3>
+              <span class="kpi-sub">Standups enviados</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon icon-purple">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-title">Bolsistas Ativos</span>
+              <h3 id="kpi-total-users">0</h3>
+              <span class="kpi-sub" id="kpi-active-week">0 ativos nesta semana</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon icon-emerald">
+              <i class="fa-solid fa-bullseye"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-title">Meta Semanal (20h)</span>
+              <h3 id="kpi-goal-rate">0%</h3>
+              <span class="kpi-sub" id="kpi-met-goal-count">0 de 0 atingiram a meta</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon icon-amber">
+              <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <div class="kpi-data">
+              <span class="kpi-title">Acervo de Conteúdos</span>
+              <h3 id="kpi-total-contents">0</h3>
+              <span class="kpi-sub">Materiais compartilhados</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção de Gráficos -->
+        <div class="charts-grid">
+          <div class="chart-card glass-panel">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-chart-line"></i> Evolução Diária de Horas Registradas</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-daily-trends"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card glass-panel">
+            <div class="card-header">
+              <h3><i class="fa-solid fa-chart-pie"></i> Horas por Projeto</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-project-dist"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feed de Atividades Recentes -->
+        <div class="glass-panel activity-panel">
+          <div class="card-header">
+            <h3><i class="fa-solid fa-bolt"></i> Últimas Dailies Registradas</h3>
+          </div>
+          <div id="recent-dailies-list" class="activity-feed">
+            <p class="empty-state">Carregando atividades...</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABA 2: BOLSISTAS & ALUNOS -->
+      <section id="tab-students" class="tab-content">
+        <div class="filter-bar glass-panel">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="student-search" placeholder="Buscar bolsista por nome...">
+          </div>
+          <div class="filter-group">
+            <label><i class="fa-solid fa-filter"></i> Meta Semanal:</label>
+            <select id="student-filter-goal">
+              <option value="all">Todos os Bolsistas</option>
+              <option value="completed">Meta 20h Atingida (>= 20h)</option>
+              <option value="in_progress">Em Andamento (< 20h)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Grid de Cards de Bolsistas -->
+        <div id="students-grid" class="students-grid">
+          <p class="empty-state">Carregando dados dos bolsistas...</p>
+        </div>
+      </section>
+
+      <!-- ABA 3: DAILIES & ENTREGAS -->
+      <section id="tab-dailies" class="tab-content">
+        <div class="filter-bar glass-panel">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="daily-search" placeholder="Buscar em tarefas, entregas ou membros...">
+          </div>
+          <div class="filter-group">
+            <label><i class="fa-solid fa-diagram-project"></i> Projeto:</label>
+            <select id="daily-filter-project">
+              <option value="">Todos os Projetos</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="glass-panel table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Bolsista</th>
+                <th>Projeto</th>
+                <th>Carga Horária</th>
+                <th>Tarefas Concluídas</th>
+                <th>Próximos Passos</th>
+                <th>Bloqueios</th>
+              </tr>
+            </thead>
+            <tbody id="dailies-table-body">
+              <tr><td colspan="7" class="empty-state">Carregando relatórios diários...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ABA 4: PROJETOS -->
+      <section id="tab-projects" class="tab-content">
+        <div id="projects-grid" class="projects-grid">
+          <p class="empty-state">Carregando projetos ativas do CIIA/DF...</p>
+        </div>
+      </section>
+
+      <!-- ABA 5: ACERVO DE CONTEÚDOS -->
+      <section id="tab-contents" class="tab-content">
+        <div class="filter-bar glass-panel">
+          <div class="filter-group category-pills" id="category-pills">
+            <button class="pill-btn active" data-category="">Todos</button>
+            <button class="pill-btn" data-category="Artigo">Artigos</button>
+            <button class="pill-btn" data-category="Benchmark">Benchmarks</button>
+            <button class="pill-btn" data-category="Ferramenta">Ferramentas</button>
+            <button class="pill-btn" data-category="Documentacao">Documentação</button>
+          </div>
+        </div>
+
+        <div class="glass-panel table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Título / Recurso</th>
+                <th>Categoria</th>
+                <th>Cadastrado por</th>
+                <th>Inspiração / Nota</th>
+                <th>Data</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
+            <tbody id="contents-table-body">
+              <tr><td colspan="6" class="empty-state">Carregando conteúdos salvos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ABA 6: RANKINGS & CONQUISTAS -->
+      <section id="tab-rankings" class="tab-content">
+        <div class="rankings-header glass-panel">
+          <h2><i class="fa-solid fa-crown gold-icon"></i> Pódio de Gamificação CIIA/DF</h2>
+          <p>Reconhecimento aos bolsistas mais dedicados da comunidade de Inteligência Artificial.</p>
+        </div>
+
+        <!-- Pódio dos Top 3 -->
+        <div id="podium-container" class="podium-container">
+          <!-- Gerado via JS -->
+        </div>
+
+        <!-- Sub-navegação do Ranking -->
+        <div class="ranking-tabs">
+          <button class="subtab-btn active" data-ranking="xp">XP & Nível</button>
+          <button class="subtab-btn" data-ranking="streak">Sequência (Streak)</button>
+          <button class="subtab-btn" data-ranking="weeklyHours">Horas Semanais</button>
+          <button class="subtab-btn" data-ranking="totalHours">Horas Totais</button>
+        </div>
+
+        <div class="glass-panel table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Posição</th>
+                <th>Bolsista</th>
+                <th>Nível</th>
+                <th>XP Total</th>
+                <th>Streak (Dias Úteis)</th>
+                <th>Horas na Semana</th>
+                <th>Horas Totais</th>
+              </tr>
+            </thead>
+            <tbody id="ranking-table-body">
+              <tr><td colspan="7" class="empty-state">Carregando ranking...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: DETALHES DO BOLSISTA -->
+  <div id="student-modal" class="modal-backdrop">
+    <div class="modal-dialog glass-panel">
+      <button id="modal-close" class="modal-close">&times;</button>
+      
+      <div id="modal-body">
+        <p class="empty-state">Carregando perfil...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts JS -->
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

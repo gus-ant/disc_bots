@@ -399,4 +399,242 @@ export function deleteContent(contentId) {
   }
 }
 
+// ==========================================
+// FUNÇÕES DE MÉTRICAS E DASHBOARD
+// ==========================================
+
+// Resumo de KPIs Globais para o Dashboard
+export function getDashboardSummary() {
+  const currentWeek = getWeekCode();
+  
+  const totalHours = db.prepare('SELECT COALESCE(SUM(hours_today), 0) as total FROM dailies').get().total;
+  const totalDailies = db.prepare('SELECT COUNT(*) as count FROM dailies').get().count;
+  const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+  const totalContents = db.prepare('SELECT COUNT(*) as count FROM contents').get().count;
+  const totalProjects = db.prepare('SELECT COUNT(*) as count FROM projects').get().count;
+  
+  // Bolsistas que bateram a meta de 20h na semana atual
+  const weeklyUserHours = db.prepare(`
+    SELECT user_id, SUM(hours_today) as hours
+    FROM dailies
+    WHERE week_code = ?
+    GROUP BY user_id
+  `).all(currentWeek);
+
+  const usersMetGoal = weeklyUserHours.filter(u => u.hours >= 20).length;
+  const activeThisWeek = weeklyUserHours.length;
+
+  const totalWeeklyHoursSum = weeklyUserHours.reduce((acc, curr) => acc + curr.hours, 0);
+  const avgWeeklyHours = activeThisWeek > 0 ? (totalWeeklyHoursSum / activeThisWeek) : 0;
+
+  return {
+    totalHours: Number(totalHours.toFixed(1)),
+    totalDailies,
+    totalUsers,
+    totalContents,
+    totalProjects,
+    currentWeek,
+    usersMetGoal,
+    activeThisWeek,
+    avgWeeklyHours: Number(avgWeeklyHours.toFixed(1)),
+    goalCompletionRate: activeThisWeek > 0 ? Math.round((usersMetGoal / activeThisWeek) * 100) : 0
+  };
+}
+
+// Histórico Temporal de Horas e Dailies
+export function getDailyTrends(days = 30) {
+  return db.prepare(`
+    SELECT 
+      date,
+      ROUND(SUM(hours_today), 1) as total_hours,
+      COUNT(id) as total_dailies,
+      COUNT(DISTINCT user_id) as active_users
+    FROM dailies
+    GROUP BY date
+    ORDER BY date ASC
+    LIMIT ?
+  `).all(days);
+}
+
+// Distribuição de Horas por Projeto
+export function getProjectDistribution() {
+  return db.prepare(`
+    SELECT 
+      COALESCE(project_name, 'Outros / Geral') as name,
+      ROUND(SUM(hours_today), 1) as total_hours,
+      COUNT(id) as total_dailies,
+      COUNT(DISTINCT user_id) as total_contributors
+    FROM dailies
+    GROUP BY project_name
+    ORDER BY total_hours DESC
+  `).all();
+}
+
+// Distribuição de Conteúdos por Categoria
+export function getContentCategoryStats() {
+  return db.prepare(`
+    SELECT category, COUNT(*) as count
+    FROM contents
+    GROUP BY category
+    ORDER BY count DESC
+  `).all();
+}
+
+// Métricas de Alunos / Bolsistas
+export function getStudentsMetrics() {
+  const currentWeek = getWeekCode();
+  const users = db.prepare('SELECT * FROM users ORDER BY xp DESC').all();
+
+  return users.map(user => {
+    const weeklyHours = getWeeklyHours(user.id, currentWeek);
+    const totalHoursRes = db.prepare('SELECT SUM(hours_today) as total FROM dailies WHERE user_id = ?').get(user.id);
+    const totalHours = totalHoursRes?.total || 0;
+    const totalDailiesRes = db.prepare('SELECT COUNT(*) as total FROM dailies WHERE user_id = ?').get(user.id);
+    const totalDailies = totalDailiesRes?.total || 0;
+    const totalContentsRes = db.prepare('SELECT COUNT(*) as total FROM contents WHERE user_id = ?').get(user.id);
+    const totalContents = totalContentsRes?.total || 0;
+    const badges = getUserBadges(user.id);
+
+    return {
+      ...user,
+      weeklyHours: Number(weeklyHours.toFixed(1)),
+      totalHours: Number(totalHours.toFixed(1)),
+      totalDailies,
+      totalContents,
+      badgesCount: badges.length,
+      badges,
+      weeklyProgressPct: Math.min(100, Math.round((weeklyHours / 20) * 100))
+    };
+  });
+}
+
+// Detalhes completos de um Aluno / Bolsista
+export function getStudentDetails(userId) {
+  const user = getUser(userId);
+  if (!user) return null;
+
+  const currentWeek = getWeekCode();
+  const weeklyHours = getWeeklyHours(userId, currentWeek);
+  const totalHoursRes = db.prepare('SELECT SUM(hours_today) as total FROM dailies WHERE user_id = ?').get(userId);
+  const totalHours = totalHoursRes?.total || 0;
+  const badges = getUserBadges(userId);
+
+  const dailies = db.prepare(`
+    SELECT * FROM dailies
+    WHERE user_id = ?
+    ORDER BY date DESC, created_at DESC
+    LIMIT 50
+  `).all(userId);
+
+  const contents = db.prepare(`
+    SELECT * FROM contents
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+  `).all(userId);
+
+  const projectsBreakdown = db.prepare(`
+    SELECT 
+      COALESCE(project_name, 'Outros') as project_name,
+      ROUND(SUM(hours_today), 1) as hours,
+      COUNT(id) as count
+    FROM dailies
+    WHERE user_id = ?
+    GROUP BY project_name
+    ORDER BY hours DESC
+  `).all(userId);
+
+  return {
+    ...user,
+    weeklyHours: Number(weeklyHours.toFixed(1)),
+    totalHours: Number(totalHours.toFixed(1)),
+    badges,
+    badgesCount: badges.length,
+    weeklyProgressPct: Math.min(100, Math.round((weeklyHours / 20) * 100)),
+    dailies,
+    contents,
+    projectsBreakdown
+  };
+}
+
+// Obter Dailies filtráveis
+export function getDailiesList({ project, userId, search, limit = 100 } = {}) {
+  let query = `
+    SELECT d.*, u.username
+    FROM dailies d
+    JOIN users u ON d.user_id = u.id
+    WHERE 1=1
+  `;
+  const params = [];
+
+  if (project) {
+    query += ` AND d.project_name = ?`;
+    params.push(project);
+  }
+  if (userId) {
+    query += ` AND d.user_id = ?`;
+    params.push(userId);
+  }
+  if (search) {
+    query += ` AND (d.tasks_done LIKE ? OR d.tasks_next LIKE ? OR u.username LIKE ?)`;
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+  }
+
+  query += ` ORDER BY d.date DESC, d.created_at DESC LIMIT ?`;
+  params.push(limit);
+
+  return db.prepare(query).all(...params);
+}
+
+// Obter Lista de Projetos com Estatísticas Detalhadas
+export function getProjectsList() {
+  const projects = db.prepare('SELECT * FROM projects ORDER BY name ASC').all();
+
+  return projects.map(proj => {
+    const stats = db.prepare(`
+      SELECT 
+        ROUND(SUM(hours_today), 1) as total_hours,
+        COUNT(id) as total_dailies,
+        COUNT(DISTINCT user_id) as total_contributors
+      FROM dailies
+      WHERE project_name = ?
+    `).get(proj.name);
+
+    const topContributor = db.prepare(`
+      SELECT u.username, SUM(d.hours_today) as hours
+      FROM dailies d
+      JOIN users u ON d.user_id = u.id
+      WHERE d.project_name = ?
+      GROUP BY d.user_id
+      ORDER BY hours DESC
+      LIMIT 1
+    `).get(proj.name);
+
+    return {
+      ...proj,
+      totalHours: stats?.total_hours || 0,
+      totalDailies: stats?.total_dailies || 0,
+      totalContributors: stats?.total_contributors || 0,
+      topContributor: topContributor ? `${topContributor.username} (${topContributor.hours.toFixed(1)}h)` : 'Nenhum'
+    };
+  });
+}
+
+// Obter Dados dos Rankings Globais
+export function getRankingsData() {
+  const students = getStudentsMetrics();
+
+  const byXP = [...students].sort((a, b) => b.xp - a.xp);
+  const byStreak = [...students].sort((a, b) => b.daily_streak - a.daily_streak);
+  const byWeeklyHours = [...students].sort((a, b) => b.weeklyHours - a.weeklyHours);
+  const byTotalHours = [...students].sort((a, b) => b.totalHours - a.totalHours);
+
+  return {
+    byXP: byXP.slice(0, 10),
+    byStreak: byStreak.slice(0, 10),
+    byWeeklyHours: byWeeklyHours.slice(0, 10),
+    byTotalHours: byTotalHours.slice(0, 10)
+  };
+}
+
 export default db;
+

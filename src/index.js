@@ -6,14 +6,16 @@ import { fileURLToPath } from 'url';
 import { initDatabase, recordDaily, addXP, hasSubmittedDailyToday, recordContent, deleteContent, getExistingUser, isUserRegistered, USER_ROLES, updateDailyForDate, getWeeklyHours, getRegisteredUsersByRole, getDailiesByDateRange } from './database.js';
 import { buildDailyEmbed, CIIA_COLORS, buildContentEmbed, buildContentAdminRow, normalizeProjectNames } from './utils/embeds.js';
 import { APP_TIME_ZONE, getCurrentWeekRange, getTodayDateString, getZonedParts, isBusinessDay } from './utils/dates.js';
+import { startServer } from './server.js';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Inicializar banco de dados SQLite
+// Inicializar banco de dados SQLite e Servidor do Dashboard Web
 initDatabase();
+startServer();
 
 // Instanciar o Client com as intents padrão (evita erro de Disallowed Intents)
 const client = new Client({

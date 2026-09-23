@@ -6,13 +6,15 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
+    "dashboard": "node src/server.js",
     "deploy": "node src/deploy-commands.js",
     "test-db": "node src/test-db.js",
     "test-bot": "node src/test-bot.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.8.1",
+    "better-sqlite3": "^13.0.3",
     "discord.js": "^14.18.0",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "express": "^4.22.3"
   }
 }
