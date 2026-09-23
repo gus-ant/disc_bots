@@ -5,14 +5,16 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { initDatabase, recordDaily, addXP, hasSubmittedDailyToday, recordContent, deleteContent } from './database.js';
 import { buildDailyEmbed, CIIA_COLORS, buildContentEmbed, buildContentAdminRow } from './utils/embeds.js';
+import { startServer } from './server.js';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Inicializar banco de dados SQLite
+// Inicializar banco de dados SQLite e Servidor do Dashboard Web
 initDatabase();
+startServer();
 
 // Instanciar o Client com as intents padrão (evita erro de Disallowed Intents)
 const client = new Client({
