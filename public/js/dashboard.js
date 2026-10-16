@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (projectDistChart) projectDistChart.destroy();
 
-    const labels = data.map(d => d.name);
+    const labels = data.map(d => d.project_name || d.name || 'Geral');
     const hours = data.map(d => d.total_hours);
     const colors = ['#00D2FF', '#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EC4899'];
 

@@ -1,8 +1,6 @@
 import { AttachmentBuilder, SlashCommandBuilder } from 'discord.js';
-import { getDailiesByDateRange, USER_ROLES } from '../database.js';
+import { getDailiesByDateRange } from '../data.js';
 import { getCurrentMonthRange } from '../utils/dates.js';
-
-export const allowedRoles = [USER_ROLES.COORDENADOR, USER_ROLES.ADMIN];
 
 function isDateString(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -54,27 +52,26 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction) {
+  await interaction.deferReply({ ephemeral: true });
   const monthRange = getCurrentMonthRange();
   const startDate = interaction.options.getString('data_inicio') || monthRange.startDate;
   const endDate = interaction.options.getString('data_fim') || monthRange.endDate;
 
   if (!isDateString(startDate) || !isDateString(endDate) || startDate > endDate) {
-    await interaction.reply({
-      content: '⚠️ Informe datas válidas no formato `YYYY-MM-DD`, com `data_inicio` menor ou igual a `data_fim`.',
-      ephemeral: true
+    await interaction.editReply({
+      content: 'Informe datas válidas no formato `YYYY-MM-DD`, com `data_inicio` menor ou igual a `data_fim`.'
     });
     return;
   }
 
-  const rows = getDailiesByDateRange(startDate, endDate);
+  const rows = await getDailiesByDateRange(startDate, endDate);
   const csv = buildCsv(rows);
   const fileName = `dailies_${startDate}_${endDate}.csv`;
   const attachment = new AttachmentBuilder(Buffer.from(csv, 'utf8'), { name: fileName });
 
-  await interaction.reply({
-    content: `✅ Exportação concluída: **${rows.length}** registro(s) de \`${startDate}\` a \`${endDate}\`.`,
-    files: [attachment],
-    ephemeral: true
+  await interaction.editReply({
+    content: `Exportação concluída: **${rows.length}** registro(s) de \`${startDate}\` a \`${endDate}\`.`,
+    files: [attachment]
   });
 }
 

@@ -8,31 +8,27 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction) {
   const embed = new EmbedBuilder()
     .setColor(CIIA_COLORS.PRIMARY)
-    .setTitle('📖 Guia do Bot CIIA/DF')
-    .setDescription('O cadastro com `/cadastrar` é obrigatório antes de usar qualquer outro comando.')
+    .setTitle('🏛 Guia de Comandos • CIIA/DF')
+    .setDescription('O cadastro com `/cadastrar` é obrigatório antes de utilizar os demais comandos.')
     .addFields(
       {
         name: 'Cadastro',
-        value: '`/cadastrar` define sua categoria. Depois do cadastro, ela só pode ser alterada por Admin com `/alterar-cadastro`.'
+        value: '`/cadastrar` realiza seu registro de Bolsista no sistema.'
       },
       {
-        name: 'Dailies',
-        value: '`/daily` registra o check-in do dia. `/editar-daily` corrige a daily de hoje. `/minha-semana` mostra seu resumo semanal.'
+        name: 'Dailies e Acompanhamento',
+        value: '`/daily` registra o standup do dia. `/editar-daily` ajusta o envio de hoje. `/minha-semana` mostra o progresso rumo à meta de 20h.'
       },
       {
-        name: 'Perfil e comunidade',
-        value: '`/perfil`, `/ranking`, `/projetos`, `/registrar-conteudo`, `/conteudos` e `/compartilhar` ajudam a acompanhar participação e acervo.'
+        name: 'Dashboard e Métricas',
+        value: '`/dashboard` exibe o painel de métricas diretamente no Discord. O painel web também fica acessível em http://localhost:3000.'
       },
       {
-        name: 'Coordenação e Admin',
-        value: '`/adicionar-projeto` e `/exportar-dailies` são para Coordenadores/Admins. `/alterar-cadastro` e exclusão de conteúdo são para Admins.'
-      },
-      {
-        name: 'Rotinas automáticas',
-        value: 'Bolsistas sem daily recebem DM às 17h em dias úteis. O resumo semanal breve sai na sexta-feira às 15h.'
+        name: 'Perfil e Comunidade',
+        value: '`/perfil`, `/ranking`, `/projetos`, `/adicionar-projeto`, `/exportar-dailies`, `/registrar-conteudo`, `/conteudos` e `/compartilhar`.'
       }
     )
-    .setFooter({ text: 'CIIA/DF • Inovação, Capacitação e IA de Interesse Público' });
+    .setFooter({ text: 'CIIA/DF • Centro Integrado de Inteligência Artificial' });
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.reply({ embeds: [embed] });
 }

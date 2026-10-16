@@ -9,23 +9,23 @@ export const CIIA_COLORS = {
   INFO: 0x00B0FF       // Azul Claro / Notícia IA
 };
 
-// Mapeamento de Badges com descrições amigáveis
+// Mapeamento de Badges com descrições limpas
 export const BADGE_INFO = {
-  first_daily: { emoji: '🚀', name: 'Primeiros Passos', desc: 'Registrou a primeira daily no CIIA' },
-  streak_5: { emoji: '🔥', name: 'Imparável (5 dias)', desc: '5 dias úteis consecutivos de daily' },
-  weekly_20h: { emoji: '⏱️', name: 'Meta 20h Concluída', desc: 'Bateu as 20 horas semanais da bolsa' },
-  ai_contributor: { emoji: '🧠', name: 'Contribuidor IA', desc: 'Compartilhou conteúdo com a comunidade' },
-  ciia_member: { emoji: '🏛️', name: 'Membro CIIA/DF', desc: 'Perfil ativado no servidor' }
+  first_daily: { name: 'Primeiros Passos', desc: 'Registrou a primeira daily no CIIA' },
+  streak_5: { name: 'Imparável (5 dias)', desc: '5 dias úteis consecutivos de daily' },
+  weekly_20h: { name: 'Meta 20h Concluída', desc: 'Bateu as 20 horas semanais da bolsa' },
+  ai_contributor: { name: 'Contribuidor IA', desc: 'Compartilhou conteúdo com a comunidade' },
+  ciia_member: { name: 'Membro CIIA/DF', desc: 'Perfil ativado no servidor' }
 };
 
-// Gerar barra de progresso visual (ex: [██████░░░░] 60%)
-export function createProgressBar(current, target = 20, size = 10) {
+// Barra de progresso visual limpa
+export function createProgressBar(current, target = 20, size = 12) {
   const percentage = Math.min(Math.max(current / target, 0), 1);
   const progress = Math.round(size * percentage);
   const emptyProgress = size - progress;
 
-  const progressText = '█'.repeat(progress);
-  const emptyProgressText = '░'.repeat(emptyProgress);
+  const progressText = '■'.repeat(progress);
+  const emptyProgressText = '□'.repeat(emptyProgress);
   const percentageText = Math.round(percentage * 100);
 
   return `\`[${progressText}${emptyProgressText}]\` **${current.toFixed(1)}h / ${target}h** (${percentageText}%)`;
@@ -53,54 +53,46 @@ function formatProjectField(projectName) {
   if (projects.length === 0) return '`Geral`';
   if (projects.length === 1) return `\`${projects[0]}\``;
 
-  return projects.map(project => `- ${project}`).join('\n');
+  return projects.map(project => `• ${project}`).join('\n');
 }
 
-// Modal para o comando /daily
+// Modal limpo para o comando /daily
 export function buildDailyModal() {
   const modal = new ModalBuilder()
     .setCustomId('modal_daily')
-    .setTitle('📋 Daily do Bolsista CIIA/DF');
+    .setTitle('Registro de Daily | CIIA/DF');
 
   const hoursInput = new TextInputBuilder()
     .setCustomId('hours_today')
-    .setLabel('Carga Horária (em horas)')
+    .setLabel('Horas trabalhadas hoje')
     .setStyle(TextInputStyle.Short)
     .setPlaceholder('Ex: 4 ou 4.5')
     .setRequired(true);
 
   const timeRangeInput = new TextInputBuilder()
     .setCustomId('time_range')
-    .setLabel('Horário de trabalho (De qual a qual hora?)')
+    .setLabel('Intervalo de horário')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Ex: 12h às 14h e 18h às 20h')
-    .setRequired(true);
-
-  const projectInput = new TextInputBuilder()
-    .setCustomId('project_name')
-    .setLabel('Projeto(s) do CIIA vinculado(s)')
-    .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Ex: Hermes Benchmark, Diagnóstico, Governança')
+    .setPlaceholder('Ex: 09h às 13h ou 14h às 18h')
     .setRequired(true);
 
   const doneInput = new TextInputBuilder()
     .setCustomId('tasks_done')
-    .setLabel('O que você realizou / demandas de hoje?')
+    .setLabel('Atividades realizadas hoje')
     .setStyle(TextInputStyle.Paragraph)
-    .setPlaceholder('Ex: Desenvolvi o módulo de testes de prompt e validei os resultados.')
+    .setPlaceholder('Resumo das entregas e atividades executadas...')
     .setRequired(true);
 
   const nextInput = new TextInputBuilder()
     .setCustomId('tasks_next')
-    .setLabel('Próximas metas & Bloqueios (se houver)')
+    .setLabel('Próximas entregas & Bloqueios')
     .setStyle(TextInputStyle.Paragraph)
-    .setPlaceholder('Ex: Metas: Iniciar testes / Bloqueios: Nenhum')
+    .setPlaceholder('Planejamento para o próximo dia útil e impedimentos...')
     .setRequired(true);
 
   modal.addComponents(
     new ActionRowBuilder().addComponents(hoursInput),
     new ActionRowBuilder().addComponents(timeRangeInput),
-    new ActionRowBuilder().addComponents(projectInput),
     new ActionRowBuilder().addComponents(doneInput),
     new ActionRowBuilder().addComponents(nextInput)
   );
@@ -111,39 +103,32 @@ export function buildDailyModal() {
 export function buildEditDailyModal(daily) {
   const modal = new ModalBuilder()
     .setCustomId('modal_edit_daily')
-    .setTitle('Editar Daily de Hoje');
+    .setTitle('Edição de Daily | CIIA/DF');
 
   const hoursInput = new TextInputBuilder()
     .setCustomId('hours_today')
-    .setLabel('Carga Horária (em horas)')
+    .setLabel('Horas trabalhadas hoje')
     .setStyle(TextInputStyle.Short)
     .setValue(String(daily.hours_today))
     .setRequired(true);
 
   const timeRangeInput = new TextInputBuilder()
     .setCustomId('time_range')
-    .setLabel('Horário de trabalho')
+    .setLabel('Intervalo de horário')
     .setStyle(TextInputStyle.Short)
     .setValue(daily.time_range || '')
     .setRequired(true);
 
-  const projectInput = new TextInputBuilder()
-    .setCustomId('project_name')
-    .setLabel('Projeto(s) do CIIA vinculado(s)')
-    .setStyle(TextInputStyle.Short)
-    .setValue(daily.project_name || '')
-    .setRequired(true);
-
   const doneInput = new TextInputBuilder()
     .setCustomId('tasks_done')
-    .setLabel('O que você realizou / demandas de hoje?')
+    .setLabel('Atividades realizadas hoje')
     .setStyle(TextInputStyle.Paragraph)
     .setValue(daily.tasks_done || '')
     .setRequired(true);
 
   const nextInput = new TextInputBuilder()
     .setCustomId('tasks_next')
-    .setLabel('Próximas metas & Bloqueios (se houver)')
+    .setLabel('Próximas entregas & Bloqueios')
     .setStyle(TextInputStyle.Paragraph)
     .setValue(daily.tasks_next || '')
     .setRequired(true);
@@ -151,7 +136,6 @@ export function buildEditDailyModal(daily) {
   modal.addComponents(
     new ActionRowBuilder().addComponents(hoursInput),
     new ActionRowBuilder().addComponents(timeRangeInput),
-    new ActionRowBuilder().addComponents(projectInput),
     new ActionRowBuilder().addComponents(doneInput),
     new ActionRowBuilder().addComponents(nextInput)
   );
@@ -159,139 +143,159 @@ export function buildEditDailyModal(daily) {
   return modal;
 }
 
-// Embed de confirmação pública de Daily no canal #standup-bolsistas
+// Embed de confirmação pública de Daily com visual limpo
 export function buildDailyEmbed(userDiscord, { hoursToday, timeRange, projectName, tasksDone, tasksNext, blockers }, result) {
   const hasBlocker = blockers && blockers.trim().toLowerCase() !== 'nenhum' && blockers.trim() !== '';
-  const projectFieldValue = formatProjectField(projectName);
-  const hasMultipleProjects = normalizeProjectNames(projectName).length > 1;
 
   const embed = new EmbedBuilder()
     .setColor(hasBlocker ? CIIA_COLORS.WARNING : CIIA_COLORS.PRIMARY)
-    .setTitle(`📋 Standup Diário - ${userDiscord.displayName || userDiscord.username}`)
+    .setTitle(`📖 Standup Diário • ${userDiscord.displayName || userDiscord.username}`)
     .setThumbnail(userDiscord.displayAvatarURL({ dynamic: true }))
     .addFields(
-      { name: '⏱️ Horas Registradas', value: `\`+${hoursToday}h\` (${timeRange || 'Não informado'})`, inline: true },
-      { name: hasMultipleProjects ? '🚀 Projetos Vinculados' : '🚀 Projeto Vinculado', value: projectFieldValue, inline: !hasMultipleProjects },
-      { name: '🔥 Daily Streak (Dias Úteis)', value: `\`${result.streak} dia(s)\``, inline: true },
-      { name: '📊 Horas Acumuladas na Semana', value: createProgressBar(result.weeklyHours, 20), inline: false },
-      { name: '✅ Realizado Hoje', value: tasksDone, inline: false },
-      { name: '🎯 Próximas Metas & Bloqueios', value: tasksNext, inline: false }
+      { name: 'Carga Horária', value: `\`${hoursToday}h\` (${timeRange || 'Período não informado'})`, inline: true },
+      { name: 'Sequência (Dias Úteis)', value: `\`${result.streak} dia(s)\``, inline: true },
+      { name: 'Progresso Semanal (Meta: 20h)', value: createProgressBar(result.weeklyHours, 20), inline: false },
+      { name: 'Atividades Concluídas', value: tasksDone, inline: false },
+      { name: 'Próximas Entregas', value: tasksNext, inline: false }
     )
     .setTimestamp()
-    .setFooter({ text: 'CIIA/DF • Centro Integrado de IA do DF', iconURL: 'https://cdn-icons-png.flaticon.com/512/8644/8644485.png' });
+    .setFooter({ text: 'CIIA/DF • Centro Integrado de Inteligência Artificial' });
 
   if (hasBlocker) {
-    embed.addFields({ name: '⚠️ Bloqueio / Impedimento Reportado', value: `> ${blockers}`, inline: false });
-  }
-
-  let extraNote = '';
-  if (result.leveledUp) {
-    extraNote += `\n🎉 **LEVEL UP!** Você alcançou o **Nível ${result.newLevel}**!`;
-  }
-  if (result.newBadges && result.newBadges.length > 0) {
-    extraNote += `\n🏆 **Nova Conquista Desbloqueada:** ${result.newBadges.join(', ')}`;
-  }
-
-  if (extraNote) {
-    embed.addFields({ name: '🎁 Recompensas de Engajamento', value: extraNote, inline: false });
+    embed.addFields({ name: 'Impedimento / Bloqueio Registrado', value: `> ${blockers}`, inline: false });
   }
 
   return embed;
 }
 
-// Embed de Perfil do Bolsista/Membro
-export function buildProfileEmbed(userDiscord, dbUser, badges, weeklyHours) {
-  const badgeList = badges.length > 0
-    ? badges.map(b => {
-        const info = BADGE_INFO[b.badge_id] || { emoji: '🎖️', name: b.badge_id };
-        return `${info.emoji} **${info.name}**`;
-      }).join('\n')
-    : '*Nenhuma conquista desbloqueada ainda. Faça sua primeira `/daily`!*';
-
+// Embed de Dashboard no Discord (Métricas executivas sem poluição visual)
+export function buildDiscordDashboardEmbed(summary, projectStats = [], topStudents = []) {
   const embed = new EmbedBuilder()
     .setColor(CIIA_COLORS.PRIMARY)
-    .setTitle(`👤 Perfil no CIIA/DF • ${userDiscord.displayName || userDiscord.username}`)
-    .setThumbnail(userDiscord.displayAvatarURL({ dynamic: true }))
+    .setTitle('Painel de Produtividade & Métricas • CIIA/DF')
+    .setDescription(`Semana de Referência: \`${summary.currentWeek}\`\nDados consolidados de bolsistas, entregas e projetos.`)
     .addFields(
-      { name: '🏷️ Função / Vínculo', value: `\`${dbUser.role}\``, inline: true },
-      { name: '⭐ Nível de Contribuição', value: `**Nível ${dbUser.level}** (${dbUser.xp} XP)`, inline: true },
-      { name: '🔥 Daily Streak (Dias Úteis)', value: `\`${dbUser.daily_streak} dia(s)\``, inline: true },
-      { name: '⏱️ Meta Semanal de Horas (Bolsa)', value: createProgressBar(weeklyHours, 20), inline: false },
-      { name: '🏆 Conquistas & Badges', value: badgeList, inline: false }
-    )
-    .setFooter({ text: 'CIIA/DF • Inovação e Inteligência Artificial Responsável' })
+      { name: 'Total de Horas', value: `\`${summary.totalHours.toFixed(1)}h\``, inline: true },
+      { name: 'Dailies Registradas', value: `\`${summary.totalDailies}\``, inline: true },
+      { name: 'Bolsistas Ativos (Semana)', value: `\`${summary.activeThisWeek}\``, inline: true },
+      { name: 'Adesão à Meta (20h)', value: `\`${summary.usersMetGoal} bolsistas (${summary.goalCompletionRate}%)\``, inline: true },
+      { name: 'Média Semanal / Bolsista', value: `\`${summary.avgWeeklyHours.toFixed(1)}h\``, inline: true },
+      { name: 'Projetos Ativos', value: `\`${summary.totalProjects}\``, inline: true }
+    );
+
+  if (projectStats && projectStats.length > 0) {
+    const projectText = projectStats
+      .slice(0, 5)
+      .map(p => `• **${p.project_name}**: ${p.total_hours}h (${p.daily_count} registros)`)
+      .join('\n');
+    embed.addFields({ name: 'Distribuição por Projeto', value: projectText, inline: false });
+  }
+
+  if (topStudents && topStudents.length > 0) {
+    const studentText = topStudents
+      .slice(0, 5)
+      .map((s, idx) => `**#${idx + 1}** ${s.username} — \`${s.weekly_hours}h\` nesta semana (Streak: ${s.daily_streak}d)`)
+      .join('\n');
+    embed.addFields({ name: 'Destaques da Semana', value: studentText, inline: false });
+  }
+
+  embed
+    .setFooter({ text: 'Painel CIIA/DF • Atualizado em tempo real' })
     .setTimestamp();
 
   return embed;
 }
 
-// Embed de Projetos Ativos do CIIA (Dinâmico do Banco de Dados)
+// Embed de Perfil Limpo
+export function buildProfileEmbed(userDiscord, dbUser, badges, weeklyHours) {
+  const badgeList = badges.length > 0
+    ? badges.map(b => {
+      const info = BADGE_INFO[b.badge_id] || { name: b.badge_id };
+      return `• **${info.name}**`;
+    }).join('\n')
+    : '*Nenhuma conquista registrada ainda.*';
+
+  const embed = new EmbedBuilder()
+    .setColor(CIIA_COLORS.PRIMARY)
+    .setTitle(`Perfil • ${userDiscord.displayName || userDiscord.username}`)
+    .setThumbnail(userDiscord.displayAvatarURL({ dynamic: true }))
+    .addFields(
+      { name: 'Categoria', value: `\`${dbUser.role}\``, inline: true },
+      { name: 'Nível', value: `**Nível ${dbUser.level}** (${dbUser.xp} XP)`, inline: true },
+      { name: 'Sequência em Dias Úteis', value: `\`${dbUser.daily_streak} dia(s)\``, inline: true },
+      { name: 'Carga Semanal (Meta: 20h)', value: createProgressBar(weeklyHours, 20), inline: false },
+      { name: 'Conquistas', value: badgeList, inline: false }
+    )
+    .setFooter({ text: 'CIIA/DF • Centro Integrado de IA' })
+    .setTimestamp();
+
+  return embed;
+}
+
+// Embed de Projetos
 export function buildProjectsEmbed(projects = []) {
   const embed = new EmbedBuilder()
     .setColor(CIIA_COLORS.PRIMARY)
-    .setTitle('🚀 Projetos & Iniciativas de IA do CIIA/DF')
-    .setDescription('O Centro Integrado de IA do DF transforma conhecimento técnico em soluções públicas e governança.\nPara cadastrar novos projetos, use o comando `/adicionar-projeto`.');
+    .setTitle('⛳️ Projetos e Frentes de Atuação • CIIA/DF')
+    .setDescription('Iniciativas ativas de pesquisa, desenvolvimento e inovação.');
 
   if (projects.length === 0) {
-    embed.addFields({ name: 'Nenhum projeto cadastrado', value: 'Use `/adicionar-projeto` para cadastrar o primeiro projeto.' });
+    embed.addFields({ name: 'Projetos', value: 'Nenhum projeto cadastrado no momento.' });
   } else {
     projects.forEach((p, idx) => {
       embed.addFields({
-        name: `🤖 ${idx + 1}. ${p.name}`,
+        name: `${idx + 1}. ${p.name}`,
         value: p.description
       });
     });
   }
 
-  embed.setFooter({ text: 'Use /daily para registrar suas contribuições nos projetos!' });
+  embed.setFooter({ text: 'Use /daily para vincular suas atividades aos projetos.' });
   return embed;
 }
 
-// Embed de Ranking de Engajamento
+// Embed de Ranking Limpo
 export function buildRankingEmbed(leaderboard) {
   const rows = leaderboard.map((u, idx) => {
-    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `**#${idx + 1}**`;
-    return `${medal} **${u.username}** • Nível ${u.level} (${u.xp} XP) | 🔥 ${u.daily_streak}d streak`;
+    return `**#${idx + 1}** ${u.username} • Nível ${u.level} (${u.xp} XP) | Sequência: ${u.daily_streak}d`;
   }).join('\n');
 
   return new EmbedBuilder()
-    .setColor(CIIA_COLORS.GOLD)
-    .setTitle('🏆 Leaderboard de Engajamento CIIA/DF')
-    .setDescription(rows || 'Nenhum membro registrado ainda.')
-    .setFooter({ text: 'Ganhe XP registrando dailies e interagindo na comunidade!' });
+    .setColor(CIIA_COLORS.PRIMARY)
+    .setTitle('🏅 Classificação de Engajamento • CIIA/DF')
+    .setDescription(rows || 'Nenhum registro encontrado.')
+    .setFooter({ text: 'Pontuação atribuída por registros de daily e colaborações.' });
 }
 
-// Embed para Compartilhamento de Conteúdo de IA
+// Embed para Compartilhamento
 export function buildShareEmbed(userDiscord, title, link, description, category) {
   return new EmbedBuilder()
     .setColor(CIIA_COLORS.INFO)
-    .setTitle(`💡 [${category}] ${title}`)
+    .setTitle(`[${category}] ${title}`)
     .setURL(link)
     .setDescription(description)
-    .addFields(
-      { name: '🔗 Link do Recurso', value: link, inline: false }
-    )
+    .addFields({ name: 'Link do Recurso', value: link, inline: false })
     .setAuthor({ name: userDiscord.displayName || userDiscord.username, iconURL: userDiscord.displayAvatarURL() })
-    .setFooter({ text: 'Compartilhado com a Comunidade CIIA/DF' })
+    .setFooter({ text: 'Compartilhado com o CIIA/DF' })
     .setTimestamp();
 }
 
-// Modal para registro de conteúdos/arquivos
+// Modal de Conteúdo
 export function buildContentModal() {
   const modal = new ModalBuilder()
     .setCustomId('modal_content')
-    .setTitle('📁 Registrar Arquivo / Conteúdo');
+    .setTitle('Registro de Conteúdo / Arquivo');
 
   const titleInput = new TextInputBuilder()
     .setCustomId('content_title')
-    .setLabel('Nome do Post / Arquivo')
+    .setLabel('Título do documento ou arquivo')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Ex: Post Carrossel IA na Educação')
+    .setPlaceholder('Ex: Relatório de Avaliação do Modelo')
     .setRequired(true);
 
   const linkInput = new TextInputBuilder()
     .setCustomId('content_link')
-    .setLabel('Link do Arquivo (Drive / Canva)')
+    .setLabel('Link do arquivo (Drive / Canva / GitHub)')
     .setStyle(TextInputStyle.Short)
     .setPlaceholder('https://...')
     .setRequired(true);
@@ -300,14 +304,14 @@ export function buildContentModal() {
     .setCustomId('content_category')
     .setLabel('Categoria')
     .setStyle(TextInputStyle.Short)
-    .setPlaceholder('Ex: Redes Sociais, Documentação, Relatório')
+    .setPlaceholder('Ex: Documentação, Benchmark, Artigo')
     .setRequired(true);
 
   const inspirationInput = new TextInputBuilder()
     .setCustomId('content_inspiration')
-    .setLabel('Inspiração / Referências (Opcional)')
+    .setLabel('Referências / Observações (Opcional)')
     .setStyle(TextInputStyle.Paragraph)
-    .setPlaceholder('Ex: Link para o post de referência ou ideias...')
+    .setPlaceholder('Links ou notas complementares...')
     .setRequired(false);
 
   modal.addComponents(
@@ -320,32 +324,32 @@ export function buildContentModal() {
   return modal;
 }
 
-// Embed de confirmação de conteúdo
+// Embed de Confirmação de Conteúdo Limpo
 export function buildContentEmbed(userDiscord, { id, title, link, inspiration, category }) {
   const embed = new EmbedBuilder()
     .setColor(CIIA_COLORS.INFO)
-    .setTitle(`📁 Novo Arquivo Registrado: ${title}`)
+    .setTitle(`Documento Registrado: ${title}`)
     .setThumbnail(userDiscord.displayAvatarURL({ dynamic: true }))
     .addFields(
-      { name: '🏷️ Categoria', value: `\`${category}\``, inline: true },
-      { name: '🔗 Link de Acesso', value: link, inline: false }
+      { name: 'Categoria', value: `\`${category}\``, inline: true },
+      { name: 'Acesso', value: link, inline: false }
     )
     .setAuthor({ name: userDiscord.displayName || userDiscord.username, iconURL: userDiscord.displayAvatarURL() })
-    .setFooter({ text: `CIIA/DF Archive • ID: ${id}` })
+    .setFooter({ text: `Acervo CIIA/DF • ID: ${id}` })
     .setTimestamp();
 
   if (inspiration && inspiration.trim() !== '') {
-    embed.addFields({ name: '💡 Inspiração / Referência', value: inspiration, inline: false });
+    embed.addFields({ name: 'Referências / Notas', value: inspiration, inline: false });
   }
 
   return embed;
 }
 
-// Botões de administração para gerenciar conteúdo
+// Botões de Administração
 export function buildContentAdminRow(contentId) {
   const deleteBtn = new ButtonBuilder()
     .setCustomId(`btn_delete_content_${contentId}`)
-    .setLabel('🗑️ Excluir Arquivo')
+    .setLabel('Excluir Registro')
     .setStyle(ButtonStyle.Danger);
 
   return new ActionRowBuilder().addComponents(deleteBtn);

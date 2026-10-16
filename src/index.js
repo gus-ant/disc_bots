@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { initDatabase, recordDaily, addXP, hasSubmittedDailyToday, recordContent, deleteContent, getExistingUser, isUserRegistered, USER_ROLES, updateDailyForDate, getWeeklyHours, getRegisteredUsersByRole, getDailiesByDateRange } from './database.js';
+import { initStorage, recordDaily, addXP, hasSubmittedDailyToday, recordContent, deleteContent, getExistingUser, isUserRegistered, USER_ROLES, updateDailyForDate, getWeeklyHours, getRegisteredUsersByRole, getDailiesByDateRange } from './data.js';
 import { buildDailyEmbed, CIIA_COLORS, buildContentEmbed, buildContentAdminRow, normalizeProjectNames } from './utils/embeds.js';
 import { APP_TIME_ZONE, getCurrentWeekRange, getTodayDateString, getZonedParts, isBusinessDay } from './utils/dates.js';
 import { startServer } from './server.js';
@@ -13,8 +13,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Inicializar banco de dados SQLite e Servidor do Dashboard Web
-initDatabase();
+// Inicializar armazenamento (Google Sheets ou SQLite) e Servidor Web
+await initStorage();
 startServer();
 
 // Instanciar o Client com as intents padrão (evita erro de Disallowed Intents)
@@ -92,21 +92,21 @@ function buildWeeklySummaryEmbed(startDate, endDate, dailies) {
 
 async function sendDailyReminders(client) {
   const today = getTodayDateString();
-  const bolsistas = getRegisteredUsersByRole(USER_ROLES.BOLSISTA);
+  const bolsistas = await getRegisteredUsersByRole(USER_ROLES.BOLSISTA);
 
   for (const bolsista of bolsistas) {
-    if (hasSubmittedDailyToday(bolsista.id, today)) continue;
+    if (await hasSubmittedDailyToday(bolsista.id, today)) continue;
 
     const user = await client.users.fetch(bolsista.id).catch(() => null);
     if (!user) continue;
 
-    await user.send('⏰ Lembrete: você ainda não registrou sua daily de hoje. Use **/daily** no servidor quando puder.').catch(() => null);
+    await user.send('Lembrete: você ainda não registrou sua daily de hoje. Use /daily no servidor quando puder.').catch(() => null);
   }
 }
 
 async function sendWeeklySummary(client) {
   const { startDate, endDate } = getCurrentWeekRange();
-  const dailies = getDailiesByDateRange(startDate, endDate);
+  const dailies = await getDailiesByDateRange(startDate, endDate);
   const embed = buildWeeklySummaryEmbed(startDate, endDate, dailies);
   const channelId = process.env.WEEKLY_SUMMARY_CHANNEL_ID || process.env.DAILY_CHANNEL_ID;
 
@@ -160,7 +160,7 @@ client.on('error', error => {
 });
 
 // Evento: Bot pronto
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`\n🤖 Bot CIIA/DF online como ${client.user.tag}!`);
   console.log(`🌐 Conectado em ${client.guilds.cache.size} servidor(es).`);
   
@@ -175,10 +175,10 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
-    const dbUser = getExistingUser(interaction.user.id);
+    const dbUser = await getExistingUser(interaction.user.id);
     if (interaction.commandName !== 'cadastrar' && !dbUser?.registered_at) {
       await interaction.reply({
-        content: '⚠️ Para usar os comandos do bot, primeiro faça seu cadastro com **/cadastrar** e escolha sua categoria.',
+        content: 'Para usar os comandos do bot, primeiro faça seu cadastro com **/cadastrar**.',
         ephemeral: true
       });
       return;
@@ -186,7 +186,7 @@ client.on('interactionCreate', async interaction => {
 
     if (interaction.commandName !== 'cadastrar' && !canUseCommand(command, interaction.user.id, dbUser)) {
       await interaction.reply({
-        content: '⛔ Você não tem permissão para usar este comando.',
+        content: 'Você não tem permissão para usar este comando.',
         ephemeral: true
       });
       return;
@@ -195,9 +195,9 @@ client.on('interactionCreate', async interaction => {
     try {
       await command.execute(interaction);
     } catch (error) {
-      console.error(`❌ Erro no comando /${interaction.commandName}:`, error.message);
+      console.error(`Erro no comando /${interaction.commandName}:`, error.message);
       try {
-        const errorMsg = { content: '❌ Ocorreu um erro ao executar este comando.', ephemeral: true };
+        const errorMsg = { content: 'Ocorreu um erro ao executar este comando.', ephemeral: true };
         if (interaction.replied || interaction.deferred) {
           await interaction.followUp(errorMsg);
         } else {
@@ -210,9 +210,9 @@ client.on('interactionCreate', async interaction => {
     return;
   }
 
-  if ((interaction.isModalSubmit() || interaction.isButton()) && !isUserRegistered(interaction.user.id)) {
+  if ((interaction.isModalSubmit() || interaction.isButton()) && !(await isUserRegistered(interaction.user.id))) {
     await interaction.reply({
-      content: '⚠️ Para usar os comandos do bot, primeiro faça seu cadastro com **/cadastrar** e escolha sua categoria.',
+      content: 'Para usar os comandos do bot, primeiro faça seu cadastro com **/cadastrar**.',
       ephemeral: true
     });
     return;
@@ -222,9 +222,9 @@ client.on('interactionCreate', async interaction => {
   if (interaction.isModalSubmit() && interaction.customId === 'modal_daily') {
     await interaction.deferReply({ ephemeral: true });
 
-    if (hasSubmittedDailyToday(interaction.user.id)) {
+    if (await hasSubmittedDailyToday(interaction.user.id)) {
       await interaction.editReply({
-        content: '⚠️ **Você já registrou o seu Standup Diário hoje!** Cada bolsista pode enviar apenas 1 daily por dia.'
+        content: 'Você já registrou o seu Standup Diário hoje. Cada bolsista pode enviar apenas 1 daily por dia.'
       });
       return;
     }
@@ -232,9 +232,6 @@ client.on('interactionCreate', async interaction => {
     try {
       const hoursStr = interaction.fields.getTextInputValue('hours_today');
       const timeRange = interaction.fields.getTextInputValue('time_range');
-      const projectNameRaw = interaction.fields.getTextInputValue('project_name');
-      const projectNames = normalizeProjectNames(projectNameRaw);
-      const projectName = projectNames.join(', ');
       const tasksDone = interaction.fields.getTextInputValue('tasks_done');
       const tasksNext = interaction.fields.getTextInputValue('tasks_next');
 
@@ -242,30 +239,23 @@ client.on('interactionCreate', async interaction => {
       const hoursToday = parseFloat(hoursStr.replace(',', '.'));
       if (isNaN(hoursToday) || hoursToday <= 0 || hoursToday > 24) {
         await interaction.editReply({
-          content: '⚠️ **Valor de horas inválido!** Insira um número válido (ex: `4` ou `4.5`). Tente novamente com `/daily`.'
+          content: 'Valor de horas inválido. Insira um número válido (ex: `4` ou `4.5`). Tente novamente com `/daily`.'
         });
         return;
       }
 
-      if (projectNames.length === 0) {
-        await interaction.editReply({
-          content: '⚠️ **Projeto inválido!** Informe pelo menos um projeto vinculado. Para mais de um, separe por vírgula, ponto e vírgula ou quebra de linha.'
-        });
-        return;
-      }
-
-      // Salvar registro de daily no SQLite
-      const result = recordDaily(interaction.user.id, interaction.user.username, {
+      // Salvar registro de daily
+      const result = await recordDaily(interaction.user.id, interaction.user.username, {
         hoursToday,
         timeRange,
-        projectName,
+        projectName: 'Geral',
         tasksDone,
         tasksNext,
         blockers: null
       });
 
       // Gerar Embed público
-      const embed = buildDailyEmbed(interaction.user, { hoursToday, timeRange, projectName, tasksDone, tasksNext, blockers: null }, result);
+      const embed = buildDailyEmbed(interaction.user, { hoursToday, timeRange, projectName: 'Geral', tasksDone, tasksNext, blockers: null }, result);
 
       // Tentar enviar no canal dedicado de standup se configurado
       const dailyChannelId = process.env.DAILY_CHANNEL_ID;
@@ -279,13 +269,13 @@ client.on('interactionCreate', async interaction => {
       await targetChannel.send({ embeds: [embed] });
 
       await interaction.editReply({
-        content: `✅ **Standup registrado com sucesso!** (+${result.xpGained} XP)\n📊 Progresso Semanal: **${result.weeklyHours.toFixed(1)}h / 20.0h**`
+        content: `Standup registrado com sucesso. (+${result.xpGained} XP)\nProgresso Semanal: **${result.weeklyHours.toFixed(1)}h / 20.0h**`
       });
 
     } catch (error) {
-      console.error('❌ Erro ao processar Modal da Daily:', error);
+      console.error('Erro ao processar Modal da Daily:', error);
       await interaction.editReply({
-        content: '❌ Houve um problema ao salvar seu registro de daily. Tente novamente mais tarde.'
+        content: 'Houve um problema ao salvar seu registro de daily. Tente novamente mais tarde.'
       });
     }
     return;
@@ -298,49 +288,39 @@ client.on('interactionCreate', async interaction => {
     try {
       const hoursStr = interaction.fields.getTextInputValue('hours_today');
       const timeRange = interaction.fields.getTextInputValue('time_range');
-      const projectNameRaw = interaction.fields.getTextInputValue('project_name');
-      const projectNames = normalizeProjectNames(projectNameRaw);
-      const projectName = projectNames.join(', ');
       const tasksDone = interaction.fields.getTextInputValue('tasks_done');
       const tasksNext = interaction.fields.getTextInputValue('tasks_next');
 
       const hoursToday = parseFloat(hoursStr.replace(',', '.'));
       if (isNaN(hoursToday) || hoursToday <= 0 || hoursToday > 24) {
         await interaction.editReply({
-          content: '⚠️ **Valor de horas inválido!** Insira um número válido (ex: `4` ou `4.5`).'
+          content: 'Valor de horas inválido. Insira um número válido (ex: `4` ou `4.5`).'
         });
         return;
       }
 
-      if (projectNames.length === 0) {
-        await interaction.editReply({
-          content: '⚠️ **Projeto inválido!** Informe pelo menos um projeto vinculado.'
-        });
-        return;
-      }
-
-      const result = updateDailyForDate(interaction.user.id, undefined, {
+      const result = await updateDailyForDate(interaction.user.id, undefined, {
         hoursToday,
         timeRange,
-        projectName,
+        projectName: 'Geral',
         tasksDone,
         tasksNext,
         blockers: null
       });
 
       if (!result.success) {
-        await interaction.editReply({ content: `⚠️ ${result.error}` });
+        await interaction.editReply({ content: result.error });
         return;
       }
 
-      const weeklyHours = getWeeklyHours(interaction.user.id);
+      const weeklyHours = await getWeeklyHours(interaction.user.id);
       await interaction.editReply({
-        content: `✅ **Daily de hoje atualizada com sucesso!**\n📊 Progresso Semanal: **${weeklyHours.toFixed(1)}h / 20.0h**`
+        content: `Daily de hoje atualizada com sucesso.\nProgresso Semanal: **${weeklyHours.toFixed(1)}h / 20.0h**`
       });
     } catch (error) {
-      console.error('❌ Erro ao editar Daily:', error);
+      console.error('Erro ao editar Daily:', error);
       await interaction.editReply({
-        content: '❌ Houve um problema ao atualizar sua daily.'
+        content: 'Houve um problema ao atualizar sua daily.'
       });
     }
     return;
@@ -360,7 +340,7 @@ client.on('interactionCreate', async interaction => {
         inspiration = interaction.fields.getTextInputValue('content_inspiration');
       } catch (e) {}
 
-      const result = recordContent(interaction.user.id, interaction.user.username, {
+      const result = await recordContent(interaction.user.id, interaction.user.username, {
         title, link, inspiration, category
       });
 
@@ -381,37 +361,37 @@ client.on('interactionCreate', async interaction => {
       await targetChannel.send({ embeds: [embed], components: [adminRow] });
 
       await interaction.editReply({
-        content: `✅ **Conteúdo registrado com sucesso!** (+${result.xpGained} XP)\nEle foi enviado para o canal de arquivos.`
+        content: `Conteúdo registrado com sucesso (+${result.xpGained || 30} XP). Ele foi enviado para o canal de arquivos.`
       });
 
     } catch (error) {
-      console.error('❌ Erro ao processar Modal de Conteúdo:', error);
-      await interaction.editReply({ content: '❌ Houve um problema ao salvar seu registro.' });
+      console.error('Erro ao processar Modal de Conteúdo:', error);
+      await interaction.editReply({ content: 'Houve um problema ao salvar seu registro.' });
     }
     return;
   }
 
   // 5. Tratar Botões (Excluir Conteúdo)
   if (interaction.isButton() && interaction.customId.startsWith('btn_delete_content_')) {
-    const dbUser = getExistingUser(interaction.user.id);
+    const dbUser = await getExistingUser(interaction.user.id);
     const hasPermission = isBotAdmin(interaction.user.id, dbUser);
     
     if (!hasPermission) {
-      return interaction.reply({ content: '❌ Apenas administradores podem excluir registros.', ephemeral: true });
+      return interaction.reply({ content: 'Apenas administradores podem excluir registros.', ephemeral: true });
     }
 
     const contentId = interaction.customId.split('_')[3];
-    const deleted = deleteContent(contentId);
+    const deletedResult = await deleteContent(contentId);
     
-    if (deleted) {
+    if (deletedResult?.changes > 0) {
       const embed = EmbedBuilder.from(interaction.message.embeds[0]);
       embed.setColor(CIIA_COLORS.WARNING);
-      embed.setTitle(embed.data.title + ' [EXCLUÍDO]');
+      embed.setTitle(embed.data.title + ' [REMOVIDO]');
       embed.setDescription('Este registro foi removido por um administrador.');
 
       await interaction.update({ embeds: [embed], components: [] });
     } else {
-      await interaction.reply({ content: '❌ Erro ao excluir ou o registro não existe mais.', ephemeral: true });
+      await interaction.reply({ content: 'Erro ao excluir ou o registro não existe mais.', ephemeral: true });
     }
     return;
   }
@@ -422,10 +402,10 @@ client.on('messageCreate', async message => {
   if (message.author.bot || !message.guild) return;
 
   const userId = message.author.id;
-  if (!isUserRegistered(userId)) return;
+  if (!(await isUserRegistered(userId))) return;
 
   if (!xpCooldowns.has(userId)) {
-    addXP(userId, 2); // 2 XP por mensagem útil
+    await addXP(userId, 2); // 2 XP por mensagem útil
     xpCooldowns.add(userId);
     setTimeout(() => xpCooldowns.delete(userId), 60000); // Cooldown de 60s
   }

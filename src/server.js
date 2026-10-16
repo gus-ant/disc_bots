@@ -2,7 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
-  initDatabase,
+  initStorage,
   getDashboardSummary,
   getDailyTrends,
   getProjectDistribution,
@@ -13,7 +13,7 @@ import {
   getProjectsList,
   getContents,
   getRankingsData
-} from './database.js';
+} from './data.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -28,9 +28,9 @@ const publicPath = path.join(__dirname, '..', 'public');
 app.use(express.static(publicPath));
 
 // Endpoint: Resumo Global (KPIs)
-app.get('/api/metrics/summary', (req, res) => {
+app.get('/api/metrics/summary', async (req, res) => {
   try {
-    const summary = getDashboardSummary();
+    const summary = await getDashboardSummary();
     res.json({ success: true, data: summary });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -38,10 +38,10 @@ app.get('/api/metrics/summary', (req, res) => {
 });
 
 // Endpoint: Tendência Temporal de Horas e Dailies
-app.get('/api/metrics/trends', (req, res) => {
+app.get('/api/metrics/trends', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 30;
-    const trends = getDailyTrends(days);
+    const trends = await getDailyTrends(days);
     res.json({ success: true, data: trends });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -49,9 +49,9 @@ app.get('/api/metrics/trends', (req, res) => {
 });
 
 // Endpoint: Distribuição por Projeto
-app.get('/api/metrics/projects', (req, res) => {
+app.get('/api/metrics/projects', async (req, res) => {
   try {
-    const projects = getProjectDistribution();
+    const projects = await getProjectDistribution();
     res.json({ success: true, data: projects });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -59,9 +59,9 @@ app.get('/api/metrics/projects', (req, res) => {
 });
 
 // Endpoint: Categorias de Conteúdo
-app.get('/api/metrics/categories', (req, res) => {
+app.get('/api/metrics/categories', async (req, res) => {
   try {
-    const categories = getContentCategoryStats();
+    const categories = await getContentCategoryStats();
     res.json({ success: true, data: categories });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -69,9 +69,9 @@ app.get('/api/metrics/categories', (req, res) => {
 });
 
 // Endpoint: Lista de Alunos / Bolsistas
-app.get('/api/students', (req, res) => {
+app.get('/api/students', async (req, res) => {
   try {
-    const students = getStudentsMetrics();
+    const students = await getStudentsMetrics();
     res.json({ success: true, data: students });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -79,9 +79,9 @@ app.get('/api/students', (req, res) => {
 });
 
 // Endpoint: Detalhes de um Aluno Específico
-app.get('/api/students/:id', (req, res) => {
+app.get('/api/students/:id', async (req, res) => {
   try {
-    const details = getStudentDetails(req.params.id);
+    const details = await getStudentDetails(req.params.id);
     if (!details) {
       return res.status(404).json({ success: false, error: 'Aluno não encontrado' });
     }
@@ -92,10 +92,10 @@ app.get('/api/students/:id', (req, res) => {
 });
 
 // Endpoint: Dailies Registradas (com Filtros)
-app.get('/api/dailies', (req, res) => {
+app.get('/api/dailies', async (req, res) => {
   try {
     const { project, userId, search, limit } = req.query;
-    const dailies = getDailiesList({
+    const dailies = await getDailiesList({
       project,
       userId,
       search,
@@ -108,9 +108,9 @@ app.get('/api/dailies', (req, res) => {
 });
 
 // Endpoint: Lista de Projetos com Estatísticas
-app.get('/api/projects', (req, res) => {
+app.get('/api/projects', async (req, res) => {
   try {
-    const projects = getProjectsList();
+    const projects = await getProjectsList();
     res.json({ success: true, data: projects });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -118,10 +118,10 @@ app.get('/api/projects', (req, res) => {
 });
 
 // Endpoint: Acervo de Conteúdos
-app.get('/api/contents', (req, res) => {
+app.get('/api/contents', async (req, res) => {
   try {
     const { userId, limit } = req.query;
-    const contents = getContents(userId || null, parseInt(limit) || 50);
+    const contents = await getContents(userId || null, parseInt(limit) || 50);
     res.json({ success: true, data: contents });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -129,9 +129,9 @@ app.get('/api/contents', (req, res) => {
 });
 
 // Endpoint: Rankings Globais
-app.get('/api/rankings', (req, res) => {
+app.get('/api/rankings', async (req, res) => {
   try {
-    const rankings = getRankingsData();
+    const rankings = await getRankingsData();
     res.json({ success: true, data: rankings });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -144,8 +144,7 @@ app.get('*', (req, res) => {
 });
 
 // Iniciar Servidor
-export function startServer(port = PORT) {
-  initDatabase();
+export async function startServer(port = PORT) {
   const server = app.listen(port, () => {
     console.log(`\n📊 Dashboard Web CIIA/DF rodando em: http://localhost:${port}`);
   });

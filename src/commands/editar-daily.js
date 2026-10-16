@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { getDailyByUserDate } from '../database.js';
+import { getDailyByUserDate } from '../data.js';
 import { buildEditDailyModal } from '../utils/embeds.js';
 
 export const data = new SlashCommandBuilder()
@@ -7,11 +7,11 @@ export const data = new SlashCommandBuilder()
   .setDescription('Edita a sua daily registrada no dia atual.');
 
 export async function execute(interaction) {
-  const daily = getDailyByUserDate(interaction.user.id);
+  const daily = await getDailyByUserDate(interaction.user.id);
 
   if (!daily) {
     await interaction.reply({
-      content: '⚠️ Você ainda não registrou uma daily hoje. Use **/daily** primeiro.',
+      content: 'Você ainda não registrou uma daily hoje. Use /daily primeiro.',
       ephemeral: true
     });
     return;

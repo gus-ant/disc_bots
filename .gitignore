@@ -1,5 +1,7 @@
 # Variáveis de Ambiente e Segredos
 .env
+credentials.json
+*credentials*.json
 
 # Dependências
 node_modules/

@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
-import { getContents } from '../database.js';
+import { getContents } from '../data.js';
 import { CIIA_COLORS } from '../utils/embeds.js';
 
 export const data = new SlashCommandBuilder()
@@ -12,29 +12,29 @@ export const data = new SlashCommandBuilder()
   );
 
 export async function execute(interaction) {
+  await interaction.deferReply();
   const targetUser = interaction.options.getUser('usuario');
   
-  // Se usuário foi fornecido, usamos o id dele, senão null
-  const contents = getContents(targetUser ? targetUser.id : null, 15);
+  const contents = await getContents(targetUser ? targetUser.id : null, 15);
 
   const embed = new EmbedBuilder()
     .setColor(CIIA_COLORS.INFO)
-    .setTitle(targetUser ? `📁 Conteúdos de ${targetUser.username}` : '📁 Últimos Conteúdos Registrados no CIIA')
-    .setDescription('Aqui estão os arquivos e posts recentes registrados na base de dados.')
+    .setTitle(targetUser ? `Conteúdos de ${targetUser.username}` : 'Conteúdos Registrados no CIIA')
+    .setDescription('Arquivos e referências recentes registrados no acervo.')
     .setTimestamp();
 
   if (contents.length === 0) {
-    embed.addFields({ name: 'Nenhum registro encontrado.', value: 'Não há conteúdos para exibir.' });
+    embed.addFields({ name: 'Nenhum registro encontrado', value: 'Não há conteúdos para exibir.' });
   } else {
     contents.forEach(c => {
-      const insp = c.inspiration ? `\n💡 Inspiração: ${c.inspiration.substring(0, 50)}...` : '';
+      const insp = c.inspiration ? `\n• Inspiração: ${c.inspiration.substring(0, 50)}...` : '';
       embed.addFields({
         name: `[${c.category}] ${c.title}`,
-        value: `👤 ${c.username}\n🔗 [Acessar Link](${c.link})${insp}\n\`ID: ${c.id}\``,
+        value: `Autor: ${c.username}\nLink: [Acessar Arquivo](${c.link})${insp}\n\`ID: ${c.id}\``,
         inline: false
       });
     });
   }
 
-  await interaction.reply({ embeds: [embed] });
+  await interaction.editReply({ embeds: [embed] });
 }

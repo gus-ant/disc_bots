@@ -42,6 +42,7 @@ Bot desenvolvido para o **Centro Integrado de Inteligência Artificial do DF (CI
 - **`/projetos` & `/adicionar-projeto`**: Apresenta as frentes de atuação e permite cadastrar novos projetos ativos do CIIA/DF.
 - **`/exportar-dailies`**: Coordenadores e admins exportam CSV do mês atual por padrão, com suporte a intervalo de datas.
 - **`/compartilhar`**: Compartilha artigos, benchmarks, notícias e ferramentas de IA com a comunidade.
+- **`/dashboard`**: Exibe o painel de métricas e produtividade consolidado diretamente no Discord (horas totais, adesão à meta de 20h, projetos mais demandados e destaques da semana).
 - **`/ajuda`**: Guia interativo para novos membros e bolsistas.
 
 ---
