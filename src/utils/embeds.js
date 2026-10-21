@@ -67,6 +67,7 @@ export function buildDailyModal() {
     .setLabel('Horas trabalhadas hoje')
     .setStyle(TextInputStyle.Short)
     .setPlaceholder('Ex: 4 ou 4.5')
+    .setMinLength(1)
     .setRequired(true);
 
   const timeRangeInput = new TextInputBuilder()
@@ -74,6 +75,7 @@ export function buildDailyModal() {
     .setLabel('Intervalo de horário')
     .setStyle(TextInputStyle.Short)
     .setPlaceholder('Ex: 09h às 13h ou 14h às 18h')
+    .setMinLength(1)
     .setRequired(true);
 
   const doneInput = new TextInputBuilder()
@@ -81,6 +83,7 @@ export function buildDailyModal() {
     .setLabel('Atividades realizadas hoje')
     .setStyle(TextInputStyle.Paragraph)
     .setPlaceholder('Resumo das entregas e atividades executadas...')
+    .setMinLength(1)
     .setRequired(true);
 
   const nextInput = new TextInputBuilder()
@@ -88,6 +91,7 @@ export function buildDailyModal() {
     .setLabel('Próximas entregas & Bloqueios')
     .setStyle(TextInputStyle.Paragraph)
     .setPlaceholder('Planejamento para o próximo dia útil e impedimentos...')
+    .setMinLength(1)
     .setRequired(true);
 
   modal.addComponents(
@@ -110,6 +114,7 @@ export function buildEditDailyModal(daily) {
     .setLabel('Horas trabalhadas hoje')
     .setStyle(TextInputStyle.Short)
     .setValue(String(daily.hours_today))
+    .setMinLength(1)
     .setRequired(true);
 
   const timeRangeInput = new TextInputBuilder()
@@ -117,6 +122,7 @@ export function buildEditDailyModal(daily) {
     .setLabel('Intervalo de horário')
     .setStyle(TextInputStyle.Short)
     .setValue(daily.time_range || '')
+    .setMinLength(1)
     .setRequired(true);
 
   const doneInput = new TextInputBuilder()
@@ -124,6 +130,7 @@ export function buildEditDailyModal(daily) {
     .setLabel('Atividades realizadas hoje')
     .setStyle(TextInputStyle.Paragraph)
     .setValue(daily.tasks_done || '')
+    .setMinLength(1)
     .setRequired(true);
 
   const nextInput = new TextInputBuilder()
@@ -131,6 +138,7 @@ export function buildEditDailyModal(daily) {
     .setLabel('Próximas entregas & Bloqueios')
     .setStyle(TextInputStyle.Paragraph)
     .setValue(daily.tasks_next || '')
+    .setMinLength(1)
     .setRequired(true);
 
   modal.addComponents(

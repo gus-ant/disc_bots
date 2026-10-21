@@ -230,10 +230,18 @@ client.on('interactionCreate', async interaction => {
     }
 
     try {
-      const hoursStr = interaction.fields.getTextInputValue('hours_today');
-      const timeRange = interaction.fields.getTextInputValue('time_range');
-      const tasksDone = interaction.fields.getTextInputValue('tasks_done');
-      const tasksNext = interaction.fields.getTextInputValue('tasks_next');
+      const hoursStr = interaction.fields.getTextInputValue('hours_today')?.trim();
+      const timeRange = interaction.fields.getTextInputValue('time_range')?.trim();
+      const tasksDone = interaction.fields.getTextInputValue('tasks_done')?.trim();
+      const tasksNext = interaction.fields.getTextInputValue('tasks_next')?.trim();
+
+      // Validar se todos os campos obrigatórios foram preenchidos
+      if (!hoursStr || !timeRange || !tasksDone || !tasksNext) {
+        await interaction.editReply({
+          content: 'Todos os campos da daily são obrigatórios e não podem ficar em branco. Preencha todos os campos e tente novamente com `/daily`.'
+        });
+        return;
+      }
 
       // Validar valor numérico das horas
       const hoursToday = parseFloat(hoursStr.replace(',', '.'));
@@ -286,10 +294,18 @@ client.on('interactionCreate', async interaction => {
     await interaction.deferReply({ ephemeral: true });
 
     try {
-      const hoursStr = interaction.fields.getTextInputValue('hours_today');
-      const timeRange = interaction.fields.getTextInputValue('time_range');
-      const tasksDone = interaction.fields.getTextInputValue('tasks_done');
-      const tasksNext = interaction.fields.getTextInputValue('tasks_next');
+      const hoursStr = interaction.fields.getTextInputValue('hours_today')?.trim();
+      const timeRange = interaction.fields.getTextInputValue('time_range')?.trim();
+      const tasksDone = interaction.fields.getTextInputValue('tasks_done')?.trim();
+      const tasksNext = interaction.fields.getTextInputValue('tasks_next')?.trim();
+
+      // Validar se todos os campos obrigatórios foram preenchidos
+      if (!hoursStr || !timeRange || !tasksDone || !tasksNext) {
+        await interaction.editReply({
+          content: 'Todos os campos da daily são obrigatórios e não podem ficar em branco.'
+        });
+        return;
+      }
 
       const hoursToday = parseFloat(hoursStr.replace(',', '.'));
       if (isNaN(hoursToday) || hoursToday <= 0 || hoursToday > 24) {
